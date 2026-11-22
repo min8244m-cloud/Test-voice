@@ -3,38 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini & DeepSeek Korean Studio</title>
+  <title>Gemini • DeepSeek • Groq Korean Studio</title>
   <style>
     :root {
-      --bg-main: #131314;
-      --bg-surface: #1e1f20;
-      --bg-hover: #2d2e30;
-      --text-main: #e3e3e3;
-      --text-sub: #9aa0a6;
-      --border: #333537;
-      --gemini-bg: #1a237e;
-      --gemini-border: #5c6bc0;
-      --deepseek-bg: #143d22;
-      --deepseek-border: #4caf50;
-      --accent: #8ab4f8;
+      --bg-pure: #000000;
+      --bg-surface: #171717;
+      --bg-elevated: #212121;
+      --bg-hover: #2f2f2f;
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --border: #2e2e2e;
+      --accent-blue: #2563eb;
     }
     body.light-mode {
-      --bg-main: #ffffff;
-      --bg-surface: #f0f4f9;
-      --bg-hover: #e1e5ea;
-      --text-main: #1f1f1f;
-      --text-sub: #5f6368;
-      --border: #dadce0;
-      --gemini-bg: #e8eaf6;
-      --gemini-border: #3f51b5;
-      --deepseek-bg: #e8f5e9;
-      --deepseek-border: #2e7d32;
-      --accent: #1a73e8;
+      --bg-pure: #ffffff;
+      --bg-surface: #f4f4f5;
+      --bg-elevated: #e4e4e7;
+      --bg-hover: #d4d4d8;
+      --text-main: #18181b;
+      --text-sub: #52525b;
+      --border: #e4e4e7;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg-main);
+      background: var(--bg-pure);
       color: var(--text-main);
       display: flex;
       flex-direction: column;
@@ -44,65 +37,87 @@
 
     /* Top Bar */
     .topbar {
-      height: 56px;
-      padding: 0 12px;
+      height: 64px;
+      padding: 0 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-main);
+      background: var(--bg-pure);
       z-index: 10;
     }
-    .icon-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-main);
-      font-size: 20px;
-      width: 40px;
-      height: 40px;
+    .circle-btn {
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
-      cursor: pointer;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .icon-btn:hover { background: var(--bg-hover); }
-    .center-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .pill-btn {
-      background: var(--bg-surface);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
       cursor: pointer;
+      transition: background 0.2s;
+    }
+    .circle-btn:active { background: var(--bg-hover); }
+
+    /* Center Media Pill */
+    .media-pill {
       display: flex;
       align-items: center;
-      gap: 5px;
-    }
-    .pill-btn.active { background: #2e7d32; color: #fff; border-color: #4caf50; }
-    .pill-btn.paused { background: #ef6c00; color: #fff; border-color: #ff9800; }
-
-    /* Status Bar */
-    .status-bar {
-      font-size: 12px;
-      color: var(--text-sub);
-      padding: 4px 12px;
-      text-align: center;
       background: var(--bg-surface);
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 6px;
+      gap: 4px;
+    }
+    .pill-side-btn {
+      width: 38px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    .pill-side-btn:active { background: var(--bg-hover); }
+    .pill-center-btn {
+      min-width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      background: var(--bg-hover);
+      border: 1px solid #3f3f46;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 0 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .pill-center-btn.is-playing {
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #fff;
+      padding: 0 16px;
     }
 
-    /* Chat Area */
+    .status-line {
+      font-size: 11px;
+      color: var(--text-sub);
+      text-align: center;
+      padding: 2px 12px 6px;
+    }
+
+    /* Chat Area & Cards */
     #chat-box {
       flex: 1;
       overflow-y: auto;
-      padding: 16px;
+      padding: 10px 16px 20px;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -111,125 +126,189 @@
       margin: auto;
       text-align: center;
       color: var(--text-sub);
-      max-width: 300px;
-    }
-    .empty-state h2 { color: var(--accent); margin-bottom: 8px; font-size: 20px; }
-    .msg {
-      padding: 12px 14px;
-      border-radius: 16px;
-      max-width: 88%;
+      max-width: 310px;
       line-height: 1.6;
-      white-space: pre-wrap;
-      font-size: 15px;
     }
-    .gemini {
-      background: var(--gemini-bg);
-      align-self: flex-start;
-      border-bottom-left-radius: 4px;
-      border-left: 3px solid var(--gemini-border);
-    }
-    .deepseek {
-      background: var(--deepseek-bg);
-      align-self: flex-end;
-      border-bottom-right-radius: 4px;
-      border-right: 3px solid var(--deepseek-border);
-    }
-    .user {
+    .empty-state h2 { color: var(--text-main); font-size: 19px; margin-bottom: 6px; }
+
+    .msg-card {
+      border-radius: 18px;
+      padding: 14px 16px;
       background: var(--bg-surface);
-      align-self: center;
       border: 1px solid var(--border);
-      font-size: 14px;
-      max-width: 92%;
-    }
-    .msg-header {
-      font-size: 12px;
-      opacity: 0.85;
-      margin-bottom: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+      flex-direction: column;
+      gap: 8px;
+      animation: fadeIn 0.25s ease;
     }
-    .action-btns { display: flex; gap: 6px; }
-    .small-btn {
-      background: rgba(128,128,128,0.2);
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card-gemini {
+      background: linear-gradient(145deg, #131c31, #171717);
+      border-left: 4px solid #3b82f6;
+    }
+    .card-deepseek {
+      background: linear-gradient(145deg, #10261d, #171717);
+      border-left: 4px solid #10b981;
+    }
+    .card-groq {
+      background: linear-gradient(145deg, #2b1810, #171717);
+      border-left: 4px solid #f97316;
+    }
+    .card-user {
+      background: var(--bg-elevated);
+      border-left: 4px solid #71717a;
+      align-self: flex-end;
+      max-width: 88%;
+    }
+    body.light-mode .card-gemini { background: #eff6ff; }
+    body.light-mode .card-deepseek { background: #ecfdf5; }
+    body.light-mode .card-groq { background: #fff7ed; }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.3px;
+    }
+    .badge-gemini { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-deepseek { background: rgba(16,185,129,0.2); color: #34d399; }
+    .badge-groq { background: rgba(249,115,22,0.2); color: #fb923c; }
+    .badge-user { background: rgba(161,161,170,0.2); color: var(--text-sub); }
+
+    .card-actions { display: flex; gap: 6px; }
+    .card-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
       color: var(--text-main);
-      border: none;
-      padding: 3px 8px;
       font-size: 11px;
-      border-radius: 6px;
+      padding: 4px 9px;
+      border-radius: 8px;
       cursor: pointer;
     }
+    body.light-mode .card-btn { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); }
+
+    .kr-text {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.55;
+      color: var(--text-main);
+      white-space: pre-wrap;
+    }
+    .mm-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--text-sub);
+      background: rgba(0,0,0,0.25);
+      padding: 8px 10px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+    body.light-mode .mm-text { background: rgba(0,0,0,0.04); }
     .chat-img {
       max-width: 220px;
       max-height: 220px;
-      border-radius: 10px;
-      margin-top: 8px;
-      display: block;
+      border-radius: 12px;
+      margin-top: 4px;
     }
 
     /* Bottom Input Bar */
-    .bottom-wrap {
-      background: var(--bg-main);
-      padding: 8px 12px 14px;
-      border-top: 1px solid var(--border);
+    .bottom-area {
+      padding: 8px 14px 16px;
+      background: var(--bg-pure);
     }
     #img-preview-box {
       display: none;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
-      background: var(--bg-surface);
+      background: var(--bg-elevated);
       padding: 6px 10px;
-      border-radius: 10px;
+      border-radius: 12px;
       width: fit-content;
+      margin-bottom: 8px;
     }
-    #img-preview-box img { height: 44px; border-radius: 6px; }
-    .input-bar {
+    #img-preview-box img { height: 40px; border-radius: 6px; }
+
+    .chat-pill-bar {
       display: flex;
       align-items: center;
-      background: var(--bg-surface);
-      border-radius: 26px;
-      padding: 4px 8px;
+      background: var(--bg-elevated);
       border: 1px solid var(--border);
-      gap: 6px;
+      border-radius: 999px;
+      padding: 5px 6px 5px 10px;
+      gap: 8px;
     }
-    .input-bar input[type="text"] {
+    .plus-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .chat-pill-bar input[type="text"] {
       flex: 1;
       background: transparent;
       border: none;
       color: var(--text-main);
-      padding: 10px 6px;
       font-size: 15px;
       outline: none;
+      min-width: 80px;
     }
-    .send-btn {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      width: 36px;
-      height: 36px;
+    .mic-btn {
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
-      font-weight: bold;
-      cursor: pointer;
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
+    }
+    .mic-btn.recording { color: #ef4444; animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+
+    .blue-wave-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
     }
 
     /* Side Drawer Menu */
     .drawer-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 50;
     }
     .drawer {
       position: fixed;
       top: 0;
-      left: -290px;
-      width: 280px;
+      left: -300px;
+      width: 285px;
       height: 100%;
       background: var(--bg-surface);
       border-right: 1px solid var(--border);
@@ -237,16 +316,18 @@
       transition: left 0.25s ease;
       display: flex;
       flex-direction: column;
-      padding: 14px;
+      padding: 16px;
     }
     .drawer.open { left: 0; }
-    .drawer-section-title {
-      font-size: 12px;
+    .drawer-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
       color: var(--text-sub);
-      margin: 14px 0 8px;
-      font-weight: 600;
+      margin: 14px 0 6px;
+      font-weight: 700;
     }
-    .menu-btn {
+    .menu-item {
       width: 100%;
       text-align: left;
       background: transparent;
@@ -260,7 +341,7 @@
       align-items: center;
       gap: 10px;
     }
-    .menu-btn:hover { background: var(--bg-hover); }
+    .menu-item:hover { background: var(--bg-hover); }
     .history-list {
       flex: 1;
       overflow-y: auto;
@@ -268,7 +349,7 @@
       flex-direction: column;
       gap: 4px;
     }
-    .history-item {
+    .history-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -276,201 +357,273 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 13px;
-      color: var(--text-main);
     }
-    .history-item:hover, .history-item.active { background: var(--bg-hover); }
-    .history-title {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
-    }
-    .del-chat-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-sub);
-      cursor: pointer;
-      padding: 2px 6px;
-    }
+    .history-row:hover, .history-row.active { background: var(--bg-hover); }
+    .history-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
 
     /* Settings Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 100;
-      padding: 16px;
+      padding: 14px;
     }
     .modal {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 20px;
       width: 100%;
-      max-width: 440px;
-      max-height: 88vh;
+      max-width: 450px;
+      max-height: 90vh;
       overflow-y: auto;
       padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
-    .modal h3 { font-size: 17px; margin-bottom: 4px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 12px; color: var(--text-sub); }
-    .form-group input, .form-group select, .form-group textarea {
-      background: var(--bg-main);
+    .modal h3 { font-size: 17px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12px; color: var(--text-sub); }
+    .field input, .field select {
+      background: var(--bg-pure);
       border: 1px solid var(--border);
       color: var(--text-main);
-      padding: 9px;
-      border-radius: 8px;
+      padding: 10px;
+      border-radius: 10px;
       font-size: 13px;
     }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .btn-save-set {
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-cancel-set {
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 9px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-<!-- Top App Bar -->
+<!-- Top Header -->
 <div class="topbar">
-  <button class="icon-btn" onclick="toggleDrawer(true)" title="Menu">☰</button>
-  
-  <div class="center-controls">
-    <button class="pill-btn" id="play-pause-btn" onclick="toggleRun()">▶️ စတင်မည်</button>
+  <button class="circle-btn" onclick="toggleDrawer(true)" title="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <line x1="4" y1="9" x2="20" y2="9"></line>
+      <line x1="4" y1="15" x2="14" y2="15"></line>
+    </svg>
+  </button>
+
+  <div class="media-pill">
+    <button class="pill-side-btn" onclick="scrollChatTop()" title="အပေါ်ဆုံးသို့">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+      </svg>
+    </button>
+
+    <button class="pill-center-btn" id="play-pause-btn" onclick="toggleRun()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    </button>
+
+    <button class="pill-side-btn" onclick="skipTurn()" title="နောက်တစ်ယောက် အလှည့်ကျော်ရန်">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+      </svg>
+    </button>
   </div>
 
-  <button class="icon-btn" onclick="createNewChat()" title="New Chat">✏️</button>
+  <button class="circle-btn" onclick="createNewChat(true)" title="New Chat">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+      <circle cx="12" cy="12" r="2"/>
+    </svg>
+  </button>
 </div>
 
-<div class="status-bar" id="status-text">အသင့်ဖြစ်ပါပြီ (ခေါင်းစဉ် သို့မဟုတ် ပုံတင်ပြီး စတင်ပါ)</div>
+<div class="status-line" id="status-text">Gemini • DeepSeek • Groq အသင့်ဖြစ်ပါပြီ</div>
 
-<!-- Chat Container -->
-<div id="chat-box">
-  <div class="empty-state" id="empty-state">
-    <h2>🇰🇷 Korean AI Studio</h2>
-    <p>Gemini နှင့် DeepSeek တို့ ကိုရီးယား-မြန်မာ တွဲဖက် ဆွေးနွေးပေးပါမည်။ ခေါင်းစဉ်ရိုက်ထည့်ပါ သို့မဟုတ် ပုံတင်ပါ။</p>
-  </div>
-</div>
+<!-- Chat Display Area -->
+<div id="chat-box"></div>
 
 <!-- Bottom Input Bar -->
-<div class="bottom-wrap">
+<div class="bottom-area">
   <div id="img-preview-box">
     <img id="img-preview" src="" alt="Preview">
     <span style="font-size:12px;">ပုံရွေးထားပါသည်</span>
-    <button class="small-btn" onclick="clearSelectedImage()">✕</button>
+    <button class="card-btn" onclick="clearSelectedImage()">✕</button>
   </div>
-  <div class="input-bar">
+
+  <div class="chat-pill-bar">
     <input type="file" id="image-input" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
-    <button class="icon-btn" style="width:36px;height:36px;font-size:18px;" onclick="document.getElementById('image-input').click()" title="ပုံတင်ရန်">🖼️</button>
-    <input type="text" id="topic-input" placeholder="ဆွေးနွေးချင်တဲ့ ခေါင်းစဉ်ရေးပါ..." onkeypress="if(event.key==='Enter') sendUserMessage()">
-    <button class="send-btn" onclick="sendUserMessage()">➤</button>
+    <button class="plus-btn" onclick="document.getElementById('image-input').click()" title="ပုံတင်ရန်">+</button>
+    
+    <input type="text" id="topic-input" placeholder="Ask Korean AI Trio..." onkeypress="if(event.key==='Enter') sendUserMessage()">
+    
+    <button class="mic-btn" id="mic-btn" onclick="startVoiceInput()" title="အသံဖြင့်ပြောရန်">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+
+    <button class="blue-wave-btn" onclick="sendUserMessage()" title="ပို့မည်">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="8" y1="8" x2="8" y2="16"></line>
+        <line x1="16" y1="8" x2="16" y2="16"></line>
+        <line x1="4" y1="11" x2="4" y2="13"></line>
+        <line x1="20" y1="11" x2="20" y2="13"></line>
+      </svg>
+    </button>
   </div>
 </div>
 
 <!-- Left Drawer Menu -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="toggleDrawer(false)"></div>
 <div class="drawer" id="drawer">
-  <button class="pill-btn" style="justify-content:center; margin-bottom:8px;" onclick="createNewChat(); toggleDrawer(false);">✏️ New Chat အသစ်စမည်</button>
+  <button class="menu-item" style="background:var(--bg-elevated); font-weight:600;" onclick="createNewChat(true); toggleDrawer(false);">➕ New Chat စတင်မည်</button>
 
-  <div class="drawer-section-title">လုပ်ဆောင်ချက်များ</div>
-  <button class="menu-btn" onclick="copyAll(); toggleDrawer(false);">📋 လက်ရှိ Chat အကုန် Copy</button>
-  <button class="menu-btn" onclick="downloadChat(); toggleDrawer(false);">💾 Save as (.txt)</button>
-  <button class="menu-btn" onclick="toggleTheme()">🌓 Dark / Light Mode ပြောင်းရန်</button>
-  <button class="menu-btn" onclick="openSettings(); toggleDrawer(false);">⚙️ AI Settings (ချိန်ညှိရန်)</button>
+  <div class="drawer-title">Menu & Controls</div>
+  <button class="menu-item" onclick="openSettings(); toggleDrawer(false);">⚙️ AI ၃ ယောက် Settings ချိန်ညှိရန်</button>
+  <button class="menu-item" onclick="copyAll(); toggleDrawer(false);">📋 Chat အားလုံး Copy ကူးရန်</button>
+  <button class="menu-item" onclick="downloadChat(); toggleDrawer(false);">💾 Save as (.txt)</button>
+  <button class="menu-item" onclick="toggleTheme()">🌓 Dark / Light Mode ပြောင်းရန်</button>
 
-  <div class="drawer-section-title">သိမ်းထားသော Chat များ</div>
+  <div class="drawer-title">သိမ်းထားသော Chats</div>
   <div class="history-list" id="history-list"></div>
 </div>
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settings-modal">
   <div class="modal">
-    <h3>⚙️ AI နှစ်ခု ချိန်ညှိခြင်း (Settings)</h3>
-    
-    <div class="form-group">
-      <label>Gemini API Key</label>
-      <input type="password" id="set-g-key" placeholder="AIzaSy...">
-    </div>
-    <div class="form-group">
-      <label>Gemini Model ရွေးချယ်ရန်</label>
-      <select id="set-g-model">
-        <option value="gemini-2.0-flash">gemini-2.0-flash (မြန်ဆန် & ပုံဖတ်နိုင်)</option>
-        <option value="gemini-2.5-flash">gemini-2.5-flash (နောက်ဆုံးထွက်)</option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash (တည်ငြိမ်)</option>
+    <h3>⚙️ AI ၃ ယောက် ချိန်ညှိခြင်း (Settings)</h3>
+
+    <div class="field">
+      <label>စကားပြောပုံစံ ရွေးချယ်ရန် (Conversation Style)</label>
+      <select id="set-style">
+        <option value="harmonious">🤝 လိုက်လျောညီထွေ ပြောမယ် (Harmonious & Helpful)</option>
+        <option value="debate">⚔️ ငြင်းခုံ ဆွေးနွေးမယ် (Debate & Disagree)</option>
+        <option value="competitive">🏆 အပြိုင်အဆိုင် ပြောမယ် (Competitive / Show-off)</option>
       </select>
     </div>
 
-    <div class="form-group">
-      <label>OpenRouter API Key</label>
+    <div class="field">
+      <label>1. Gemini API Key (Google AI Studio)</label>
+      <input type="password" id="set-g-key" placeholder="AIzaSy...">
+    </div>
+    <div class="field">
+      <label>Gemini Model</label>
+      <select id="set-g-model">
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>2. OpenRouter API Key (DeepSeek)</label>
       <input type="password" id="set-o-key" placeholder="sk-or-v1-...">
     </div>
-    <div class="form-group">
-      <label>OpenRouter Model (DeepSeek / အခြား)</label>
+    <div class="field">
+      <label>OpenRouter Model</label>
       <input type="text" id="set-o-model" value="deepseek/deepseek-chat">
     </div>
 
-    <div class="form-group">
-      <label>Gemini အခန်းကဏ္ဍ (Role / Prompt)</label>
-      <textarea id="set-g-role">You are a friendly Korean teacher. Introduce natural Korean sentences, explain vocabulary/grammar briefly, and discuss the topic/image.</textarea>
+    <div class="field">
+      <label>3. Groq API Key (console.groq.com)</label>
+      <input type="password" id="set-q-key" placeholder="gsk_...">
+    </div>
+    <div class="field">
+      <label>Groq Model</label>
+      <select id="set-q-model">
+        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (အထက်မြက်ဆုံး)</option>
+        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (အမြန်ဆုံး)</option>
+        <option value="qwen/qwen3-32b">qwen/qwen3-32b</option>
+      </select>
     </div>
 
-    <div class="form-group">
-      <label>DeepSeek အခန်းကဏ္ဍ (Role / Prompt)</label>
-      <textarea id="set-d-role">You are a Korean conversation partner. Reply naturally to Gemini, give alternative expressions or real-life examples in Korea.</textarea>
-    </div>
-
-    <div class="form-group">
-      <label>တစ်ယောက်ပြောပြီး စောင့်ဆိုင်းချိန် (စက္ကန့်) & အသံနှုန်း</label>
+    <div class="field">
+      <label>စောင့်ဆိုင်းချိန် (စက္ကန့်) နှင့် အသံအမြန်နှုန်း</label>
       <div style="display:flex; gap:8px;">
-        <input type="number" id="set-delay" value="4" min="1" max="30" style="flex:1;" title="Delay Seconds">
-        <input type="number" id="set-tts-rate" value="0.9" step="0.1" min="0.5" max="1.5" style="flex:1;" title="TTS Speed">
+        <input type="number" id="set-delay" value="4" min="1" max="30" style="flex:1;" title="Seconds">
+        <input type="number" id="set-tts" value="0.9" step="0.1" min="0.5" max="1.5" style="flex:1;" title="TTS Speed">
       </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="pill-btn" onclick="closeSettings()">ပိတ်မည်</button>
-      <button class="pill-btn active" onclick="saveSettings()">သိမ်းဆည်းမည်</button>
+    <div class="modal-footer">
+      <button class="btn-cancel-set" onclick="closeSettings()">ပိတ်မည်</button>
+      <button class="btn-save-set" onclick="saveSettings()">သိမ်းဆည်းမည်</button>
     </div>
   </div>
 </div>
 
 <script>
-  // State Variables
   let isRunning = false;
-  let turn = 'gemini';
-  let sessions = JSON.parse(localStorage.getItem('kr_ai_sessions') || '[]');
+  let turnIndex = 0; // 0 = Gemini, 1 = DeepSeek, 2 = Groq
+  let sessions = JSON.parse(localStorage.getItem('kr_trio_sessions') || '[]');
   let currentSessionId = null;
   let pendingImageBase64 = null;
   let pendingImageMime = null;
 
-  // Default Config
   let config = Object.assign({
+    style: 'harmonious',
     gKey: localStorage.getItem('g_key') || '',
-    oKey: localStorage.getItem('o_key') || '',
     gModel: 'gemini-2.0-flash',
+    oKey: localStorage.getItem('o_key') || '',
     oModel: 'deepseek/deepseek-chat',
-    gRole: 'You are a friendly Korean teacher. Introduce natural Korean sentences, explain vocabulary/grammar briefly, and discuss the topic/image.',
-    dRole: 'You are a Korean conversation partner. Reply naturally to Gemini, give alternative expressions or real-life examples in Korea.',
+    qKey: '',
+    qModel: 'llama-3.3-70b-versatile',
     delay: 4,
-    ttsRate: 0.9,
+    tts: 0.9,
     theme: 'dark'
-  }, JSON.parse(localStorage.getItem('kr_ai_config') || '{}'));
+  }, JSON.parse(localStorage.getItem('kr_groq_config') || '{}'));
 
   window.onload = () => {
     if (config.theme === 'light') document.body.classList.add('light-mode');
-    if (sessions.length > 0) {
-      loadSession(sessions[0].id);
-    } else {
-      createNewChat(false);
-    }
+    if (sessions.length > 0) loadSession(sessions[0].id);
+    else createNewChat(true);
     renderHistoryList();
   };
 
-  function saveAllSessions() {
-    localStorage.setItem('kr_ai_sessions', JSON.stringify(sessions));
+  function getActiveAgents() {
+    const list = [];
+    if (config.gKey) list.push('gemini');
+    if (config.oKey) list.push('deepseek');
+    if (config.qKey) list.push('groq');
+    return list;
+  }
+
+  function getStyleInstruction(agentName) {
+    if (config.style === 'debate') {
+      return `You are ${agentName}. DEBATE MODE: Strongly disagree with or challenge the previous speaker's Korean expression or opinion! Argue why your Korean phrase or viewpoint is much better, while keeping it fun and educational.`;
+    }
+    if (config.style === 'competitive') {
+      return `You are ${agentName}. COMPETITIVE MODE: Try to outshine the other AIs! Show off cooler, more natural, or native-level Korean slang/expressions than the others did.`;
+    }
+    return `You are ${agentName}. HARMONIOUS MODE: Agree warmly with the previous speaker, build upon their Korean sentences naturally, and teach useful daily Korean conversation together.`;
+  }
+
+  // Session Management
+  function saveSessions() {
+    localStorage.setItem('kr_trio_sessions', JSON.stringify(sessions));
     renderHistoryList();
   }
 
@@ -480,15 +633,12 @@
 
   function createNewChat(render = true) {
     pauseConversation();
-    const newId = 'chat_' + Date.now();
-    sessions.unshift({
-      id: newId,
-      title: 'စကားဝိုင်းအသစ်',
-      messages: []
-    });
-    currentSessionId = newId;
-    saveAllSessions();
-    if (render) loadSession(newId);
+    const id = 'trio_' + Date.now();
+    sessions.unshift({ id, title: 'စကားဝိုင်းအသစ်', messages: [] });
+    currentSessionId = id;
+    turnIndex = 0;
+    saveSessions();
+    if (render) loadSession(id);
   }
 
   function loadSession(id) {
@@ -501,14 +651,11 @@
     if (!session || session.messages.length === 0) {
       box.innerHTML = `
         <div class="empty-state" id="empty-state">
-          <h2>🇰🇷 Korean AI Studio</h2>
-          <p>Gemini နှင့် DeepSeek တို့ ကိုရီးယား-မြန်မာ တွဲဖက် ဆွေးနွေးပေးပါမည်။ ခေါင်းစဉ်ရိုက်ထည့်ပါ သို့မဟုတ် ပုံတင်ပါ။</p>
+          <h2>🇰🇷 Korean AI Trio</h2>
+          <p>Gemini, DeepSeek နှင့် Groq တို့ ၃ ယောက်သား ကိုရီးယား-မြန်မာ တွဲဖက် ဆွေးနွေးပေးပါမည်။ ခေါင်းစဉ်ရိုက်ထည့်ပါ သို့မဟုတ် + နှိပ်ပြီး ပုံတင်ပါ။</p>
         </div>`;
-      turn = 'gemini';
     } else {
-      session.messages.forEach(m => renderMessage(m.role, m.name, m.text, m.image));
-      const last = session.messages[session.messages.length - 1];
-      turn = (last.role === 'gemini') ? 'deepseek' : 'gemini';
+      session.messages.forEach(m => renderCard(m.role, m.name, m.text, m.image));
     }
     renderHistoryList();
     updateStatus('အသင့်ဖြစ်ပါပြီ');
@@ -516,12 +663,11 @@
 
   function deleteSession(id, e) {
     e.stopPropagation();
-    if (!confirm('ဒီ Chat မှတ်တမ်းကို ဖျက်မှာ သေချာပါသလား?')) return;
+    if (!confirm('ဒီ Chat ကို ဖျက်မှာ သေချာပါသလား?')) return;
     sessions = sessions.filter(s => s.id !== id);
-    if (sessions.length === 0) {
-      createNewChat(true);
-    } else {
-      saveAllSessions();
+    if (sessions.length === 0) createNewChat(true);
+    else {
+      saveSessions();
       if (currentSessionId === id) loadSession(sessions[0].id);
     }
   }
@@ -530,35 +676,29 @@
     const list = document.getElementById('history-list');
     list.innerHTML = '';
     sessions.forEach(s => {
-      const item = document.createElement('div');
-      item.className = 'history-item' + (s.id === currentSessionId ? ' active' : '');
-      item.onclick = () => { loadSession(s.id); toggleDrawer(false); };
-      
-      const title = document.createElement('span');
-      title.className = 'history-title';
-      title.innerText = '💬 ' + s.title;
-
+      const row = document.createElement('div');
+      row.className = 'history-row' + (s.id === currentSessionId ? ' active' : '');
+      row.onclick = () => { loadSession(s.id); toggleDrawer(false); };
+      row.innerHTML = `<span class="history-name">💬 ${s.title}</span>`;
       const del = document.createElement('button');
-      del.className = 'del-chat-btn';
+      del.className = 'card-btn';
       del.innerText = '🗑️';
       del.onclick = (e) => deleteSession(s.id, e);
-
-      item.appendChild(title);
-      item.appendChild(del);
-      list.appendChild(item);
+      row.appendChild(del);
+      list.appendChild(row);
     });
   }
 
-  // Image Handling
-  function handleImageSelect(event) {
-    const file = event.target.files[0];
+  // Image Upload
+  function handleImageSelect(e) {
+    const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
+    reader.onload = (ev) => {
+      const url = ev.target.result;
       pendingImageMime = file.type;
-      pendingImageBase64 = dataUrl.split(',')[1];
-      document.getElementById('img-preview').src = dataUrl;
+      pendingImageBase64 = url.split(',')[1];
+      document.getElementById('img-preview').src = url;
       document.getElementById('img-preview-box').style.display = 'flex';
     };
     reader.readAsDataURL(file);
@@ -571,103 +711,133 @@
     document.getElementById('img-preview-box').style.display = 'none';
   }
 
-  // Sending User Message / Image
+  // User Input & Voice
   function sendUserMessage() {
     const input = document.getElementById('topic-input');
     const text = input.value.trim();
     if (!text && !pendingImageBase64) return;
 
-    const displayText = text || 'ဒီပုံထဲက အကြောင်းအရာကို ကိုရီးယားလို ဆွေးနွေးပေးပါ။';
+    const finalText = text || 'ဒီပုံနဲ့ ပတ်သက်ပြီး ကိုရီးယားလို ဆွေးနွေးပေးပါ။';
     const imgDataUrl = pendingImageBase64 ? `data:${pendingImageMime};base64,${pendingImageBase64}` : null;
 
     const session = getCurrentSession();
-    if (session.messages.length === 0) {
-      session.title = displayText.slice(0, 26);
-    }
+    if (session.messages.length === 0) session.title = finalText.slice(0, 25);
 
-    addMessage('user', 'You', displayText, imgDataUrl, pendingImageBase64, pendingImageMime);
-    
+    addMessage('user', 'You', finalText, imgDataUrl, pendingImageBase64, pendingImageMime);
     input.value = '';
     clearSelectedImage();
-    turn = 'gemini'; // User ပို့ပြီးတာနဲ့ Gemini က အရင်စဖြေမယ် (ပုံပါရင် Gemini Vision ဖတ်နိုင်အောင်)
+    turnIndex = 0;
     if (!isRunning) startConversation();
   }
 
+  function startVoiceInput() {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) { alert('ဒီ Browser မှာ Voice Input မရပါ။'); return; }
+    const rec = new SpeechRec();
+    rec.lang = 'my-MM';
+    const micBtn = document.getElementById('mic-btn');
+    micBtn.classList.add('recording');
+    rec.onresult = (e) => {
+      document.getElementById('topic-input').value = e.results[0][0].transcript;
+      micBtn.classList.remove('recording');
+    };
+    rec.onerror = () => micBtn.classList.remove('recording');
+    rec.onend = () => micBtn.classList.remove('recording');
+    rec.start();
+  }
+
+  // Render Readable Cards
   function addMessage(role, name, text, image = null, rawBase64 = null, mimeType = null) {
     const empty = document.getElementById('empty-state');
     if (empty) empty.remove();
-
-    renderMessage(role, name, text, image);
+    renderCard(role, name, text, image);
     const session = getCurrentSession();
     session.messages.push({ role, name, text, image, rawBase64, mimeType });
-    saveAllSessions();
+    saveSessions();
   }
 
-  function renderMessage(role, name, text, image = null) {
+  function renderCard(role, name, text, image = null) {
     const box = document.getElementById('chat-box');
-    const div = document.createElement('div');
-    div.className = `msg ${role}`;
+    const card = document.createElement('div');
+    card.className = `msg-card card-${role}`;
 
-    const header = document.createElement('div');
-    header.className = 'msg-header';
-    header.innerHTML = `<span><b>${name}</b></span>`;
+    const top = document.createElement('div');
+    top.className = 'card-top';
+    top.innerHTML = `<span class="badge badge-${role}">${name}</span>`;
 
     if (role !== 'user') {
-      const btnGroup = document.createElement('div');
-      btnGroup.className = 'action-btns';
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
 
       const ttsBtn = document.createElement('button');
-      ttsBtn.className = 'small-btn';
+      ttsBtn.className = 'card-btn';
       ttsBtn.innerText = '🔊 နားထောင်';
       ttsBtn.onclick = () => speakKorean(text, ttsBtn);
-      btnGroup.appendChild(ttsBtn);
+      actions.appendChild(ttsBtn);
 
       const copyBtn = document.createElement('button');
-      copyBtn.className = 'small-btn';
+      copyBtn.className = 'card-btn';
       copyBtn.innerText = '📋 Copy';
       copyBtn.onclick = () => {
         navigator.clipboard.writeText(text);
         copyBtn.innerText = '✅';
         setTimeout(() => copyBtn.innerText = '📋 Copy', 1200);
       };
-      btnGroup.appendChild(copyBtn);
-      header.appendChild(btnGroup);
+      actions.appendChild(copyBtn);
+      top.appendChild(actions);
     }
+    card.appendChild(top);
 
-    const content = document.createElement('div');
-    content.innerText = text;
+    if (role === 'user') {
+      const uDiv = document.createElement('div');
+      uDiv.className = 'kr-text';
+      uDiv.style.fontSize = '14.5px';
+      uDiv.innerText = text;
+      card.appendChild(uDiv);
+    } else {
+      const mmMatches = text.match(/\([^)]+\)/g);
+      const krOnly = text.replace(/\([^)]*\)/g, '').trim();
 
-    div.appendChild(header);
-    div.appendChild(content);
+      if (krOnly) {
+        const krDiv = document.createElement('div');
+        krDiv.className = 'kr-text';
+        krDiv.innerText = krOnly;
+        card.appendChild(krDiv);
+      }
+      if (mmMatches && mmMatches.length > 0) {
+        const mmDiv = document.createElement('div');
+        mmDiv.className = 'mm-text';
+        mmDiv.innerText = mmMatches.join('\n');
+        card.appendChild(mmDiv);
+      }
+    }
 
     if (image) {
-      const imgEl = document.createElement('img');
-      imgEl.src = image;
-      imgEl.className = 'chat-img';
-      div.appendChild(imgEl);
+      const img = document.createElement('img');
+      img.src = image;
+      img.className = 'chat-img';
+      card.appendChild(img);
     }
 
-    box.appendChild(div);
+    box.appendChild(card);
     box.scrollTop = box.scrollHeight;
   }
 
-  // TTS
-  function speakKorean(fullText, btnElement) {
+  // Korean TTS
+  function speakKorean(fullText, btn) {
     window.speechSynthesis.cancel();
-    const koreanOnly = fullText.replace(/\([^)]*\)/g, '').trim();
-    if (!koreanOnly) return;
-
-    const utterance = new SpeechSynthesisUtterance(koreanOnly);
-    utterance.lang = 'ko-KR';
-    utterance.rate = parseFloat(config.ttsRate) || 0.9;
-
-    btnElement.innerText = '🔊 ...';
-    utterance.onend = () => { btnElement.innerText = '🔊 နားထောင်'; };
-    utterance.onerror = () => { btnElement.innerText = '🔊 နားထောင်'; };
-    window.speechSynthesis.speak(utterance);
+    const krOnly = fullText.replace(/\([^)]*\)/g, '').trim();
+    if (!krOnly) return;
+    const utt = new SpeechSynthesisUtterance(krOnly);
+    utt.lang = 'ko-KR';
+    utt.rate = parseFloat(config.tts) || 0.9;
+    btn.innerText = '🔊 ...';
+    utt.onend = () => btn.innerText = '🔊 နားထောင်';
+    utt.onerror = () => btn.innerText = '🔊 နားထောင်';
+    window.speechSynthesis.speak(utt);
   }
 
-  // Controls
+  // Play / Pause Controls
   function toggleRun() {
     if (isRunning) pauseConversation();
     else startConversation();
@@ -677,14 +847,27 @@
     isRunning = false;
     window.speechSynthesis.cancel();
     const btn = document.getElementById('play-pause-btn');
-    btn.innerText = '▶️ ဆက်ပြောမည်';
-    btn.className = 'pill-btn paused';
-    updateStatus('⏸️ ခဏရပ်ထားပါသည်');
+    btn.classList.remove('is-playing');
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+    updateStatus('⏸️ Pause လုပ်ထားပါသည်');
+  }
+
+  function skipTurn() {
+    const agents = getActiveAgents();
+    if (agents.length > 0) {
+      turnIndex = (turnIndex + 1) % agents.length;
+      updateStatus(`⏭️ နောက်တစ်ယောက် (${agents[turnIndex].toUpperCase()}) အလှည့်သို့ ပြောင်းလိုက်ပါသည်`);
+    }
+  }
+
+  function scrollChatTop() {
+    document.getElementById('chat-box').scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function startConversation() {
-    if (!config.gKey || !config.oKey) {
-      alert('Menu (☰) > AI Settings ထဲမှာ Gemini နဲ့ OpenRouter API Key အရင်ထည့်ပေးပါ။');
+    const agents = getActiveAgents();
+    if (agents.length === 0) {
+      alert('Menu (=) > Settings ထဲမှာ API Key အနည်းဆုံး တစ်ခု ထည့်ပေးပါ။');
       openSettings();
       return;
     }
@@ -692,8 +875,8 @@
     isRunning = true;
 
     const btn = document.getElementById('play-pause-btn');
-    btn.innerText = '⏸️ ခဏရပ်မည်';
-    btn.className = 'pill-btn active';
+    btn.classList.add('is-playing');
+    btn.innerText = 'Pause';
 
     const session = getCurrentSession();
     if (session.messages.length === 0) {
@@ -701,46 +884,53 @@
     }
 
     while (isRunning) {
-      const recentMsgs = session.messages.slice(-6);
-      const contextText = recentMsgs.map(m => `${m.name}: ${m.text}`).join('\n');
-      
-      // နောက်ဆုံး User Message မှာ ပုံပါမပါ စစ်ဆေးခြင်း
-      const lastUserWithImg = [...recentMsgs].reverse().find(m => m.role === 'user' && m.rawBase64);
+      const activeList = getActiveAgents();
+      if (activeList.length === 0) break;
+      const currentAgent = activeList[turnIndex % activeList.length];
 
-      if (turn === 'gemini') {
-        updateStatus(`💬 Gemini (${config.gModel}) စာရိုက်နေသည်...`);
-        const reply = await callGemini(contextText, lastUserWithImg);
+      const recentMsgs = session.messages.slice(-8);
+      const context = recentMsgs.map(m => `${m.name}: ${m.text}`).join('\n');
+      const lastImgMsg = [...recentMsgs].reverse().find(m => m.role === 'user' && m.rawBase64);
+
+      if (currentAgent === 'gemini') {
+        updateStatus('💬 Gemini စာရိုက်နေသည်...');
+        const reply = await callGemini(context, lastImgMsg);
         if (!isRunning) break;
         if (reply) addMessage('gemini', 'Gemini', reply);
-        turn = 'deepseek';
-      } else {
+      } else if (currentAgent === 'deepseek') {
         updateStatus('💬 DeepSeek စာရိုက်နေသည်...');
-        const reply = await callOpenRouter(contextText);
+        const reply = await callOpenRouter(context);
         if (!isRunning) break;
         if (reply) addMessage('deepseek', 'DeepSeek', reply);
-        turn = 'gemini';
+      } else if (currentAgent === 'groq') {
+        updateStatus('⚡ Groq စာရိုက်နေသည်...');
+        const reply = await callGroq(context);
+        if (!isRunning) break;
+        if (reply) addMessage('groq', 'Groq', reply);
       }
 
+      turnIndex = (turnIndex + 1) % activeList.length;
       if (!isRunning) break;
-      const waitSec = parseInt(config.delay) || 4;
-      updateStatus(`⏳ ${waitSec} စက္ကန့် စောင့်ဆိုင်းနေပါသည်...`);
-      await new Promise(r => setTimeout(r, waitSec * 1000));
+
+      const sec = parseInt(config.delay) || 4;
+      updateStatus(`⏳ ${sec} စက္ကန့် စောင့်ဆိုင်းနေသည်...`);
+      await new Promise(r => setTimeout(r, sec * 1000));
     }
   }
 
-  async function callGemini(context, imgMsg) {
-    const baseRule = `${config.gRole}\nIMPORTANT FORMAT RULE: Speak 2-3 natural Korean sentences. Immediately below the Korean sentences, provide the accurate Burmese (Myanmar) translation inside parentheses ( ).`;
-    
-    const parts = [{ text: `${baseRule}\n\nConversation:\n${context}\n\nYour turn (Gemini):` }];
-    if (imgMsg && imgMsg.rawBase64) {
-      parts.push({
-        inline_data: {
-          mime_type: imgMsg.mimeType,
-          data: imgMsg.rawBase64
-        }
-      });
-    }
+  function buildPrompt(agentName) {
+    return `${getStyleInstruction(agentName)}
+STRICT FORMAT:
+- Write 2 to 3 natural Korean sentences.
+- Immediately below the Korean sentences, write the accurate Burmese (Myanmar) translation inside parentheses ( ).
+- Do not use markdown bolding or extra labels.`;
+  }
 
+  async function callGemini(context, imgMsg) {
+    const parts = [{ text: `${buildPrompt('Gemini')}\n\nConversation:\n${context}\n\nGemini:` }];
+    if (imgMsg && imgMsg.rawBase64) {
+      parts.push({ inline_data: { mime_type: imgMsg.mimeType, data: imgMsg.rawBase64 } });
+    }
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.gModel}:generateContent?key=${config.gKey}`, {
         method: 'POST',
@@ -748,49 +938,62 @@
         body: JSON.stringify({ contents: [{ parts }] })
       });
       const data = await res.json();
-      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return data.candidates[0].content.parts[0].text;
-      }
-      const errMsg = data.error ? data.error.message : 'Unknown Gemini Error';
+      if (data.candidates?.[0]?.content?.parts?.[0]?.text) return data.candidates[0].content.parts[0].text;
       pauseConversation();
-      return `Gemini Error: ${errMsg}`;
+      return `Gemini Error: ${data.error?.message || 'Failed'}`;
     } catch (e) {
       pauseConversation();
-      return `Gemini Network Error: ${e.message}`;
+      return `Gemini Error: ${e.message}`;
     }
   }
 
   async function callOpenRouter(context) {
-    const baseRule = `${config.dRole}\nIMPORTANT FORMAT RULE: Speak 2-3 natural Korean sentences. Immediately below the Korean sentences, provide the accurate Burmese (Myanmar) translation inside parentheses ( ).`;
     try {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.oKey}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${config.oKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: config.oModel,
           messages: [
-            { role: "system", content: baseRule },
-            { role: "user", content: `Conversation:\n${context}\n\nYour turn (DeepSeek):` }
+            { role: "system", content: buildPrompt('DeepSeek') },
+            { role: "user", content: `Conversation:\n${context}\n\nDeepSeek:` }
           ]
         })
       });
       const data = await res.json();
-      if (data.choices?.[0]?.message?.content) {
-        return data.choices[0].message.content;
-      }
-      const errMsg = data.error ? data.error.message : 'Unknown OpenRouter Error';
+      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
       pauseConversation();
-      return `OpenRouter Error: ${errMsg}`;
+      return `DeepSeek Error: ${data.error?.message || 'Failed'}`;
     } catch (e) {
       pauseConversation();
-      return `OpenRouter Error: ${e.message}`;
+      return `DeepSeek Error: ${e.message}`;
     }
   }
 
-  // Drawer, Theme & Settings Functions
+  async function callGroq(context) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${config.qKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.qModel,
+          messages: [
+            { role: "system", content: buildPrompt('Groq') },
+            { role: "user", content: `Conversation:\n${context}\n\nGroq:` }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+      pauseConversation();
+      return `Groq Error: ${data.error?.message || 'Failed'}`;
+    } catch (e) {
+      pauseConversation();
+      return `Groq Error: ${e.message}`;
+    }
+  }
+
+  // Drawer & Settings
   function toggleDrawer(open) {
     document.getElementById('drawer').classList.toggle('open', open);
     document.getElementById('drawer-overlay').style.display = open ? 'block' : 'none';
@@ -799,18 +1002,19 @@
   function toggleTheme() {
     document.body.classList.toggle('light-mode');
     config.theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
-    localStorage.setItem('kr_ai_config', JSON.stringify(config));
+    localStorage.setItem('kr_groq_config', JSON.stringify(config));
   }
 
   function openSettings() {
+    document.getElementById('set-style').value = config.style;
     document.getElementById('set-g-key').value = config.gKey;
     document.getElementById('set-g-model').value = config.gModel;
     document.getElementById('set-o-key').value = config.oKey;
     document.getElementById('set-o-model').value = config.oModel;
-    document.getElementById('set-g-role').value = config.gRole;
-    document.getElementById('set-d-role').value = config.dRole;
+    document.getElementById('set-q-key').value = config.qKey;
+    document.getElementById('set-q-model').value = config.qModel;
     document.getElementById('set-delay').value = config.delay;
-    document.getElementById('set-tts-rate').value = config.ttsRate;
+    document.getElementById('set-tts').value = config.tts;
     document.getElementById('settings-modal').style.display = 'flex';
   }
 
@@ -819,36 +1023,34 @@
   }
 
   function saveSettings() {
+    config.style = document.getElementById('set-style').value;
     config.gKey = document.getElementById('set-g-key').value.trim();
     config.gModel = document.getElementById('set-g-model').value;
     config.oKey = document.getElementById('set-o-key').value.trim();
     config.oModel = document.getElementById('set-o-model').value.trim() || 'deepseek/deepseek-chat';
-    config.gRole = document.getElementById('set-g-role').value.trim();
-    config.dRole = document.getElementById('set-d-role').value.trim();
+    config.qKey = document.getElementById('set-q-key').value.trim();
+    config.qModel = document.getElementById('set-q-model').value;
     config.delay = document.getElementById('set-delay').value;
-    config.ttsRate = document.getElementById('set-tts-rate').value;
-
-    localStorage.setItem('kr_ai_config', JSON.stringify(config));
+    config.tts = document.getElementById('set-tts').value;
+    localStorage.setItem('kr_groq_config', JSON.stringify(config));
     closeSettings();
-    updateStatus('✅ Settings များကို သိမ်းဆည်းပြီးပါပြီ');
+    updateStatus('✅ Settings သိမ်းဆည်းပြီးပါပြီ');
   }
 
   function copyAll() {
-    const session = getCurrentSession();
-    if (!session || session.messages.length === 0) return;
-    const text = session.messages.map(m => `[${m.name}]\n${m.text}`).join('\n\n---\n\n');
-    navigator.clipboard.writeText(text);
-    updateStatus('📋 Chat တစ်ခုလုံးကို Copy ကူးပြီးပါပြီ');
+    const s = getCurrentSession();
+    if (!s || s.messages.length === 0) return;
+    navigator.clipboard.writeText(s.messages.map(m => `[${m.name}]\n${m.text}`).join('\n\n---\n\n'));
+    updateStatus('📋 Chat အားလုံး Copy ကူးပြီးပါပြီ');
   }
 
   function downloadChat() {
-    const session = getCurrentSession();
-    if (!session || session.messages.length === 0) return;
-    const text = session.messages.map(m => `[${m.name}]\n${m.text}`).join('\n\n----------------------------------------\n\n');
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const s = getCurrentSession();
+    if (!s || s.messages.length === 0) return;
+    const blob = new Blob([s.messages.map(m => `[${m.name}]\n${m.text}`).join('\n\n---\n\n')], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `${session.title}.txt`;
+    a.download = `${s.title}.txt`;
     a.click();
   }
 
