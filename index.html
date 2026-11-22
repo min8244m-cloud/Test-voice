@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Korean Female TTS Comparison (4 Models)</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: #0f172a; color: #f8fafc; margin: 0; padding: 16px;
+      display: flex; justify-content: center;
+    }
+    .container { width: 100%; max-width: 540px; }
+    h2 { margin: 0 0 8px; font-size: 1.3rem; color: #38bdf8; }
+    p.sub { margin: 0 0 16px; font-size: 0.85rem; color: #94a3b8; }
+    textarea {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #334155;
+      background: #1e293b; color: #fff; font-size: 1.05rem; resize: vertical;
+      min-height: 90px; outline: none;
+    }
+    textarea:focus { border-color: #38bdf8; }
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 16px; }
+    .preset-btn {
+      background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+      padding: 6px 10px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+    }
+    .preset-btn:active { background: #334155; }
+    .worker-box {
+      background: #1e293b; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #334155; margin-bottom: 16px;
+    }
+    .worker-box label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; }
+    .worker-box input {
+      width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #475569;
+      background: #0f172a; color: #e2e8f0; font-size: 0.85rem;
+    }
+    .card {
+      background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .card-title { font-weight: 700; font-size: 1rem; color: #f1f5f9; }
+    .badge {
+      font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
+      background: #0284c7; color: #fff; font-weight: 600;
+    }
+    .desc { font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    button.play-btn {
+      flex: 1; padding: 10px 14px; border: none; border-radius: 10px;
+      background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 0.9rem;
+      cursor: pointer; transition: 0.15s;
+    }
+    button.play-btn:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+    .status { font-size: 0.78rem; color: #fbbf24; margin-top: 8px; min-height: 18px; }
+    audio { width: 100%; height: 34px; margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🇰🇷 Korean Female TTS Tester</h2>
+    <p class="sub">ကိုရီးယား မိန်းကလေးအသံ ၄ မျိုးလုံးကို တိုက်ရိုက်နားထောင် ယှဉ်ကြည့်ပါ</p>
+
+    <textarea id="korText">안녕하세요! 오늘 날씨가 정말 좋네요. 커피 한 잔 마실까요?</textarea>
+
+    <div class="presets">
+      <button class="preset-btn" onclick="setText('안녕하세요, 만나서 반갑습니다.')">မင်္ဂလာပါ</button>
+      <button class="preset-btn" onclick="setText('이거 얼마예요? 조금만 깎아 주세요.')">ဈေးဆစ်မယ်</button>
+      <button class="preset-btn" onclick="setText('아이스 아메리카노 한 잔 주세요.')">ကော်ဖီမှာမယ်</button>
+      <button class="preset-btn" onclick="setText('지하철역이 어디에 있는지 알려주세요.')">လမ်းမေးမယ်</button>
+    </div>
+
+    <div class="worker-box">
+      <label>Edge-TTS Cloudflare Worker URL (ရှိရင်ထည့်ပါ၊ မရှိရင် Browser Korean Voice နဲ့ စမ်းပေးပါမယ်)</label>
+      <input type="text" id="workerUrl" value="https://sagapyaw.sagapyaw.workers.dev" placeholder="https://your-worker.workers.dev" />
+    </div>
+
+    <!-- 1. Edge-TTS -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">1. Microsoft Edge-TTS</span>
+        <span class="badge">Cloud / Free</span>
+      </div>
+      <div class="desc">Voice: <b>ko-KR-SunHiNeural</b> (သဘာဝအကျဆုံး မိန်းကလေးအသံ၊ ဖုန်းထဲ Model သိမ်းစရာမလို)</div>
+      <div class="controls">
+        <button class="play-btn" id="btn-edge" onclick="playEdgeTTS()">▶ Play Edge-TTS</button>
+      </div>
+      <div class="status" id="status-edge"></div>
+      <audio id="audio-edge" controls></audio>
+    </div>
+
+    <!-- 2. Xenova/mms-tts-kor -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">2. Facebook MMS-TTS Korean</span>
+        <span class="badge">ONNX ~36MB</span>
+      </div>
+      <div class="desc">Repo: <b>Xenova/mms-tts-kor</b> (Offline အလုပ်လုပ်သည်၊ တစ်ခါ Download ဆွဲရုံသာ)</div>
+      <div class="controls">
+        <button class="play-btn" id="btn-mms" onclick="playMMS()">▶ Play MMS-TTS (ONNX)</button>
+      </div>
+      <div class="status" id="status-mms"></div>
+      <audio id="audio-mms" controls></audio>
+    </div>
+
+    <!-- 3. Kokoro-82M ONNX -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">3. Kokoro-82M Korean</span>
+        <span class="badge">ONNX ~80MB</span>
+      </div>
+      <div class="desc">Repo: <b>onnx-community/Kokoro-82M-v1.0-ONNX</b> (Voice: <code>kf_bella</code> / <code>kf_sarah</code>)</div>
+      <div class="controls">
+        <button class="play-btn" id="btn-kokoro" onclick="playKokoro()">▶ Play Kokoro (kf_bella)</button>
+      </div>
+      <div class="status" id="status-kokoro"></div>
+      <audio id="audio-kokoro" controls></audio>
+    </div>
+
+    <!-- 4. Piper VITS Korean -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">4. Piper VITS Korean (KSS)</span>
+        <span class="badge">ONNX ~60MB</span>
+      </div>
+      <div class="desc">Repo: <b>rhasspy/piper-voices</b> (<code>ko_KR-kss-medium</code> - Korean Female Dataset)</div>
+      <div class="controls">
+        <button class="play-btn" id="btn-piper" onclick="playPiper()">▶ Play Piper VITS (KSS)</button>
+      </div>
+      <div class="status" id="status-piper"></div>
+      <audio id="audio-piper" controls></audio>
+    </div>
+  </div>
+
+  <script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0';
+
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+
+    window.setText = (txt) => {
+      document.getElementById('korText').value = txt;
+    };
+
+    function setStatus(id, msg) {
+      document.getElementById(`status-${id}`).textContent = msg;
+    }
+
+    function playAudioBlob(id, blob) {
+      const audioEl = document.getElementById(`audio-${id}`);
+      const url = URL.createObjectURL(blob);
+      audioEl.src = url;
+      audioEl.style.display = 'block';
+      audioEl.play();
+    }
+
+    // Float32Array to WAV Blob helper
+    function float32ToWav(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+      const writeString = (offset, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+      };
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    // 1. Edge-TTS (Worker + Browser Fallback)
+    window.playEdgeTTS = async () => {
+      const text = document.getElementById('korText').value.trim();
+      const worker = document.getElementById('workerUrl').value.trim();
+      const btn = document.getElementById('btn-edge');
+      if (!text) return;
+
+      btn.disabled = true;
+      setStatus('edge', '⏳ Edge-TTS ချိတ်ဆက်နေပါသည်...');
+
+      try {
+        // Worker URL မှာ ko-KR-SunHiNeural ပံ့ပိုးထားရင် တိုက်ရိုက် MP3 ရပါမယ်
+        const url = `${worker}?text=${encodeURIComponent(text)}&voice=ko-KR-SunHiNeural`;
+        const res = await fetch(url);
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok || !contentType.includes('audio')) {
+          throw new Error('Worker မှာ Korean voice မပါသေးပါ (Browser Korean TTS ပြောင်းသုံးပေးပါမည်)');
+        }
+        const blob = await res.blob();
+        playAudioBlob('edge', blob);
+        setStatus('edge', '✅ Edge-TTS (ko-KR-SunHiNeural) ဖွင့်နေပါသည်');
+      } catch (err) {
+        setStatus('edge', '⚠️ ' + err.message);
+        // Browser built-in Korean fallback
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ko-KR';
+        window.speechSynthesis.speak(utter);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // 2. Xenova/mms-tts-kor
+    let mmsSynthesizer = null;
+    window.playMMS = async () => {
+      const text = document.getElementById('korText').value.trim();
+      const btn = document.getElementById('btn-mms');
+      if (!text) return;
+
+      btn.disabled = true;
+      try {
+        if (!mmsSynthesizer) {
+          setStatus('mms', '⏳ Xenova/mms-tts-kor Model (~36MB) Download ဆွဲနေပါသည်...');
+          mmsSynthesizer = await pipeline('text-to-speech', 'Xenova/mms-tts-kor', {
+            progress_callback: (p) => {
+              if (p.status === 'progress') {
+                setStatus('mms', `⏳ Downloading: ${p.file} (${Math.round(p.progress)}%)`);
+              }
+            }
+          });
+        }
+        setStatus('mms', '🔊 အသံထုတ်နေပါသည်...');
+        const out = await mmsSynthesizer(text);
+        const wavBlob = float32ToWav(out.audio, out.sampling_rate);
+        playAudioBlob('mms', wavBlob);
+        setStatus('mms', '✅ Xenova/mms-tts-kor အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ');
+      } catch (err) {
+        setStatus('mms', '❌ Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // 3. Kokoro-82M ONNX
+    let kokoroInstance = null;
+    window.playKokoro = async () => {
+      const text = document.getElementById('korText').value.trim();
+      const btn = document.getElementById('btn-kokoro');
+      if (!text) return;
+
+      btn.disabled = true;
+      try {
+        if (!kokoroInstance) {
+          setStatus('kokoro', '⏳ Kokoro-82M ONNX (~80MB) Download ဆွဲနေပါသည်...');
+          const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm');
+          kokoroInstance = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
+            dtype: 'q8',
+            progress_callback: (p) => {
+              if (p.status === 'progress') {
+                setStatus('kokoro', `⏳ Downloading: ${Math.round(p.progress)}%`);
+              }
+            }
+          });
+        }
+        setStatus('kokoro', '🔊 Kokoro အသံထုတ်နေပါသည်...');
+        const audio = await kokoroInstance.generate(text, { voice: 'kf_bella' });
+        const wavBlob = audio.toBlob();
+        playAudioBlob('kokoro', wavBlob);
+        setStatus('kokoro', '✅ Kokoro-82M (kf_bella) ဖွင့်ပြီးပါပြီ');
+      } catch (err) {
+        setStatus('kokoro', '❌ Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    // 4. Piper VITS Korean (KSS)
+    let piperModule = null;
+    window.playPiper = async () => {
+      const text = document.getElementById('korText').value.trim();
+      const btn = document.getElementById('btn-piper');
+      if (!text) return;
+
+      btn.disabled = true;
+      try {
+        setStatus('piper', '⏳ Piper VITS Korean (ko_KR-kss-medium) Download ဆွဲနေပါသည်...');
+        if (!piperModule) {
+          piperModule = await import('https://cdn.jsdelivr.net/npm/@mintplex-labs/piper-tts-web@1.0.4/+esm');
+        }
+        const wavBlob = await piperModule.predict({
+          text: text,
+          voiceId: 'ko_KR-kss-medium'
+        }, (progress) => {
+          if (progress && progress.loaded && progress.total) {
+            const pct = Math.round((progress.loaded / progress.total) * 100);
+            setStatus('piper', `⏳ Downloading Piper KSS: ${pct}%`);
+          }
+        });
+        playAudioBlob('piper', wavBlob);
+        setStatus('piper', '✅ Piper VITS (ko_KR-kss-medium) ဖွင့်ပြီးပါပြီ');
+      } catch (err) {
+        setStatus('piper', '❌ Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
