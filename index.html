@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini & DeepSeek Korean Tutor (Auto-Save)</title>
+  <title>Gemini & DeepSeek Korean Tutor (Fixed)</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; }
@@ -25,7 +25,6 @@
     .msg-header { font-size: 12px; opacity: 0.9; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .action-btns { display: flex; gap: 6px; }
     .small-btn { background: rgba(255,255,255,0.18); color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
-    .small-btn:active { background: rgba(255,255,255,0.35); }
     .footer { background: #1e1e1e; padding: 10px; display: flex; gap: 8px; border-top: 1px solid #333; }
     .status-bar { font-size: 12px; color: #aaa; padding: 4px 12px; background: #181818; text-align: center; }
   </style>
@@ -60,7 +59,6 @@
   let turn = 'gemini';
   let chatHistory = [];
 
-  // App စဖွင့်ချိန်တွင် API Keys နှင့် သိမ်းထားသော Chat များကို ပြန်ခေါ်ခြင်း
   window.onload = () => {
     document.getElementById('gemini-key').value = localStorage.getItem('g_key') || '';
     document.getElementById('openrouter-key').value = localStorage.getItem('o_key') || '';
@@ -71,13 +69,12 @@
         chatHistory = JSON.parse(savedChat);
         chatHistory.forEach(m => renderMessage(m.role, m.name, m.text));
         if (chatHistory.length > 0) {
-          // နောက်ဆုံးပြောခဲ့သူပေါ်မူတည်ပြီး အလှည့်ပြန်သတ်မှတ်မယ်
           const lastRole = chatHistory[chatHistory.length - 1].role;
           turn = (lastRole === 'gemini') ? 'deepseek' : 'gemini';
           updateStatus(`💾 သိမ်းထားသော စကားပြော ${chatHistory.length} ကြောင်းကို ပြန်ဖော်ထားပါသည်`);
         }
       } catch (e) {
-        console.error("Failed to load chat history", e);
+        console.error(e);
       }
     }
   };
@@ -113,7 +110,6 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  // UI ပေါ်တွင် စာသားပြသပေးမည့် Function
   function renderMessage(sender, name, text) {
     const box = document.getElementById('chat-box');
     const div = document.createElement('div');
@@ -155,7 +151,6 @@
     box.scrollTop = box.scrollHeight;
   }
 
-  // စာသားအသစ်ထည့်ပြီး Auto-Save လုပ်မည့် Function
   function addMessage(sender, name, text) {
     renderMessage(sender, name, text);
     chatHistory.push({ role: sender, name: name, text: text });
@@ -197,7 +192,6 @@
     updateStatus("📋 Chat တစ်ခုလုံးကို Copy ကူးပြီးပါပြီ!");
   }
 
-  // Chat များကို .txt ဖိုင်အဖြစ် ဒေါင်းလုဒ်ဆွဲသိမ်းဆည်းခြင်း
   function downloadChat() {
     if (chatHistory.length === 0) {
       alert("သိမ်းစရာ စကားပြောမှတ်တမ်း မရှိသေးပါ။");
@@ -253,22 +247,36 @@
     }
   }
 
+  // Gemini Model များကို Auto-Fallback စနစ်ဖြင့် ခေါ်ဆိုခြင်း
   async function callGemini(apiKey, context) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nConversation so far:\n${context}\n\nYour turn (Gemini):` }] }]
-        })
-      });
-      const data = await res.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error from Gemini";
-    } catch (e) {
-      isRunning = false;
-      updateStatus("❌ Gemini ချိတ်ဆက်မှု အဆင်မပြေပါ");
-      return "Gemini Error: " + e.message;
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastError = "Unknown Error";
+
+    for (const model of models) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nConversation so far:\n${context}\n\nYour turn (Gemini):` }] }]
+          })
+        });
+        const data = await res.json();
+        
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+          return data.candidates[0].content.parts[0].text;
+        }
+        if (data.error) {
+          lastError = `[${model}] ${data.error.message}`;
+        }
+      } catch (e) {
+        lastError = e.message;
+      }
     }
+
+    isRunning = false;
+    updateStatus("❌ Gemini Error ကြောင့် ခဏရပ်လိုက်ပါသည်");
+    return `Gemini Error: ${lastError}`;
   }
 
   async function callOpenRouter(apiKey, context) {
@@ -288,6 +296,10 @@
         })
       });
       const data = await res.json();
+      if (data.error) {
+        isRunning = false;
+        return `OpenRouter Error: ${data.error.message}`;
+      }
       return data.choices?.[0]?.message?.content || "Error from OpenRouter";
     } catch (e) {
       isRunning = false;
@@ -298,3 +310,4 @@
 </script>
 </body>
 </html>
+
