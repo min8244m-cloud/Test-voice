@@ -391,7 +391,7 @@
     .modal h3 { font-size: 17px; }
     .field { display: flex; flex-direction: column; gap: 4px; }
     .field label { font-size: 12px; color: var(--text-sub); }
-    .field input, .field select {
+    .field input, .field select, .field textarea {
       background: var(--bg-pure);
       border: 1px solid var(--border);
       color: var(--text-main);
@@ -516,16 +516,18 @@
     </div>
 
     <div class="field">
-      <label>1. Gemini API Key (Auto-Fallback ပါဝင်သည်)</label>
-      <input type="password" id="set-g-key" placeholder="AIzaSy...">
+      <label>1. Gemini API Key(s) — တစ်ခုမက ထည့်လိုပါက တစ်ကြောင်းစီခွဲထည့်ပါ (Auto Key Rotation + Auto Model)</label>
+      <textarea id="set-g-key" rows="2" placeholder="AIzaSy... (တစ်ကြောင်းလျှင် Key တစ်ခု)"></textarea>
     </div>
     <div class="field">
-      <label>Gemini Primary Model</label>
+      <label>Gemini Preferred Model (မရပါက အလိုအလျောက် တခြား Model ပြောင်းပေးပါမည်)</label>
       <select id="set-g-model">
-        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+        <option value="gemini-flash-latest">gemini-flash-latest (အကြံပြုသည်)</option>
+        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
+        <option value="gemini-4-neon">gemini-4-neon</option>
+        <option value="gemini-4-hydrogen">gemini-4-hydrogen</option>
+        <option value="gemini-4-argon">gemini-4-argon</option>
         <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-        <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
-        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
       </select>
     </div>
 
@@ -539,15 +541,15 @@
     </div>
 
     <div class="field">
-      <label>3. Groq API Key (Auto-Fallback ပါဝင်သည်)</label>
+      <label>3. Groq API Key</label>
       <input type="password" id="set-q-key" placeholder="gsk_...">
     </div>
     <div class="field">
-      <label>Groq Primary Model</label>
+      <label>Groq Model</label>
       <select id="set-q-model">
-        <option value="openai/gpt-oss-120b">openai/gpt-oss-120b (သင့် Project တွင် ပါဝင်သည်)</option>
-        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
-        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
+        <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+        <option value="qwen/qwen3.8-27b">qwen/qwen3.8-27b</option>
+        <option value="openai/gpt-oss-20b">openai/gpt-oss-20b</option>
       </select>
     </div>
 
@@ -617,6 +619,8 @@
   let isRunning = false;
   let loopToken = 0;
   let turnIndex = 0;
+  let gKeyRotationIdx = 0;
+  let cachedGeminiModels = null;
   let sessions = JSON.parse(localStorage.getItem('kr_trio_sessions') || '[]');
   let currentSessionId = null;
   let pendingImageBase64 = null;
@@ -625,7 +629,7 @@
   let config = Object.assign({
     style: 'harmonious',
     gKey: localStorage.getItem('g_key') || '',
-    gModel: 'gemini-2.0-flash',
+    gModel: 'gemini-flash-latest',
     oKey: localStorage.getItem('o_key') || '',
     oModel: 'deepseek/deepseek-chat',
     qKey: '',
@@ -642,9 +646,13 @@
     renderHistoryList();
   };
 
+  function getGeminiKeys() {
+    return (config.gKey || '').split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+  }
+
   function getActiveAgents() {
     const list = [];
-    if (config.gKey) list.push('gemini');
+    if (getGeminiKeys().length > 0) list.push('gemini');
     if (config.oKey) list.push('deepseek');
     if (config.qKey) list.push('groq');
     return list;
@@ -926,7 +934,7 @@
 
       let result = null;
       if (currentAgent === 'gemini') {
-        result = await callGeminiWithFallback(context, lastImgMsg);
+        result = await callGeminiSmart(context, lastImgMsg);
       } else if (currentAgent === 'deepseek') {
         updateStatus('💬 DeepSeek စာရိုက်နေသည်...');
         result = await callOpenRouter(context);
@@ -956,17 +964,46 @@ STRICT FORMAT:
 - Do not use markdown bolding or extra labels.`;
   }
 
-  // --- Gemini Auto-Fallback System ---
-  async function callGeminiWithFallback(context, imgMsg) {
-    const allModels = [
+  // --- Smart Gemini Model Discovery + Multi-Key Fallback ---
+  async function getAvailableGeminiModels(apiKey) {
+    if (cachedGeminiModels && cachedGeminiModels.length > 0) return cachedGeminiModels;
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const data = await res.json();
+      if (data.models) {
+        const valid = data.models
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => m.name.replace('models/', ''))
+          .filter(name => !name.includes('embedding') && !name.includes('imagen') && !name.includes('veo'));
+        if (valid.length > 0) {
+          cachedGeminiModels = valid;
+          return valid;
+        }
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  async function callGeminiSmart(context, imgMsg) {
+    const keys = getGeminiKeys();
+    if (keys.length === 0) return { label: 'Gemini (Error)', text: '⚠️ Gemini API Key မထည့်ရသေးပါ' };
+
+    // Key Rotation
+    const currentKey = keys[gKeyRotationIdx % keys.length];
+    gKeyRotationIdx = (gKeyRotationIdx + 1) % keys.length;
+
+    // 1. သင့် API Key မှာ အမှန်တကယ် ရနိုင်တဲ့ Models တွေကို အရင်စစ်မယ်
+    const discoveredModels = await getAvailableGeminiModels(currentKey);
+    const candidateModels = [
       config.gModel,
-      'gemini-2.0-flash',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash'
+      'gemini-flash-latest',
+      'gemini-3.5-flash-lite',
+      'gemini-4-neon',
+      'gemini-4-hydrogen',
+      'gemini-4-argon',
+      ...discoveredModels
     ];
-    // Duplicate တွေ ဖယ်မယ်
-    const uniqueModels = [...new Set(allModels)];
+    const uniqueModels = [...new Set(candidateModels)];
     let lastError = 'Unknown Error';
 
     for (const model of uniqueModels) {
@@ -977,13 +1014,15 @@ STRICT FORMAT:
       }
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.gKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts }] })
         });
         const data = await res.json();
         if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          // အလုပ်လုပ်တဲ့ Model ကို မှတ်ထားလိုက်မယ်
+          config.gModel = model;
           return {
             label: `Gemini (${model.replace('gemini-', '')})`,
             text: data.candidates[0].content.parts[0].text
@@ -995,10 +1034,9 @@ STRICT FORMAT:
       }
     }
 
-    // အကုန်လုံး မရမှသာ Error ပြပြီး နောက်တစ်ယောက်ဆီ ဆက်ကူးမယ်
     return {
       label: 'Gemini (Error)',
-      text: `⚠️ Gemini Models အားလုံး မရပါ:\n(${lastError})`
+      text: `⚠️ Gemini မရပါ:\n(${lastError})`
     };
   }
 
@@ -1025,14 +1063,12 @@ STRICT FORMAT:
     }
   }
 
-  // --- Groq Auto-Fallback System ---
   async function callGroqWithFallback(context) {
     const allModels = [
       config.qModel,
       'openai/gpt-oss-120b',
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'allam-2-7b'
+      'qwen/qwen3.8-27b',
+      'openai/gpt-oss-20b'
     ];
     const uniqueModels = [...new Set(allModels)];
     let lastError = 'Unknown Error';
@@ -1066,7 +1102,7 @@ STRICT FORMAT:
 
     return {
       label: 'Groq (Error)',
-      text: `⚠️ Groq Models အားလုံး မရပါ:\n(${lastError})`
+      text: `⚠️ Groq မရပါ:\n(${lastError})`
     };
   }
 
@@ -1108,6 +1144,7 @@ STRICT FORMAT:
     config.qModel = document.getElementById('set-q-model').value;
     config.delay = document.getElementById('set-delay').value;
     config.tts = document.getElementById('set-tts').value;
+    cachedGeminiModels = null; // Key ပြောင်းလဲပါက Model list ပြန်စစ်ရန်
     localStorage.setItem('kr_groq_config', JSON.stringify(config));
     closeSettings();
     updateStatus('✅ Settings သိမ်းဆည်းပြီးပါပြီ');
@@ -1136,4 +1173,3 @@ STRICT FORMAT:
 </script>
 </body>
 </html>
-
