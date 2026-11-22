@@ -1,1394 +1,300 @@
 <!DOCTYPE html>
-<html lang="my" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Agent AI App Studio — Collaborative AI Builder</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter, JetBrains Mono & Noto Sans Myanmar -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- JSZip for PWA & Project Packaging -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'Noto Sans Myanmar', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body {
-            font-family: 'Inter', 'Noto Sans Myanmar', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
-
-        .phone-frame {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55), 0 0 0 10px #1e293b, 0 0 0 12px #334155;
-        }
-        .light .phone-frame {
-            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18), 0 0 0 10px #0f172a, 0 0 0 12px #cbd5e1;
-        }
-        @keyframes typingBounce {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-        .dot-bounce { animation: typingBounce 1.4s infinite ease-in-out both; }
-        .dot-bounce:nth-child(1) { animation-delay: -0.32s; }
-        .dot-bounce:nth-child(2) { animation-delay: -0.16s; }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-900 dark:bg-[#070b14] dark:text-slate-100 h-screen flex flex-col overflow-hidden transition-colors duration-200">
-
-    <!-- Top Navigation Bar -->
-    <header class="shrink-0 z-30 border-b border-slate-200 dark:border-slate-800/80 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
-            <!-- Brand -->
-            <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-violet-600 to-fuchsia-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25">
-                    <i data-lucide="bot" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="font-bold text-sm sm:text-base tracking-tight">AI Team Studio</span>
-                        <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25">Multi-Agent</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block" data-i18n="subtitle">AI ၃ ဦး အတူတိုင်ပင်ပြီး App တည်ဆောက်ပေးမည့် စတူဒီယို</p>
-                </div>
-            </div>
-
-            <!-- Action Controls -->
-            <div class="flex items-center gap-1.5 sm:gap-2">
-                <!-- Saved Projects Button -->
-                <button onclick="openModal('projectsModal'); renderProjectsList();" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition">
-                    <i data-lucide="folder-git-2" class="w-4 h-4 text-indigo-500"></i>
-                    <span class="hidden md:inline" data-i18n="projectsBtn">App မှတ်တမ်း</span>
-                    <span id="savedCountBadge" class="px-1.5 py-0.2 text-[10px] rounded-full bg-indigo-600 text-white font-bold">0</span>
-                </button>
-
-                <!-- API Keys & Agents Config Button -->
-                <button onclick="openModal('settingsModal')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 transition">
-                    <span id="apiIndicatorDot" class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
-                    <span id="apiHeaderStatus">API Setup</span>
-                </button>
-
-                <!-- Language Switch -->
-                <button onclick="toggleLang()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition">
-                    <span id="langBtnText">EN</span>
-                </button>
-
-                <!-- Theme Switch -->
-                <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition" aria-label="Theme">
-                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block text-amber-400"></i>
-                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden text-slate-700"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Primary 3-Tab Switcher Bar -->
-    <nav class="shrink-0 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800/80 px-3 sm:px-6">
-        <div class="max-w-7xl mx-auto flex items-center justify-between py-2 gap-2">
-            <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                <button id="tabBtn-chat" onclick="switchMainTab('chat')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="messages-square" class="w-4 h-4"></i>
-                    <span data-i18n="tabChat">AI အဖွဲ့လိုက် Chat</span>
-                </button>
-                <button id="tabBtn-preview" onclick="switchMainTab('preview')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="smartphone" class="w-4 h-4"></i>
-                    <span data-i18n="tabPreview">Live Preview</span>
-                    <span id="previewReadyDot" class="hidden w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                </button>
-                <button id="tabBtn-code" onclick="switchMainTab('code')" class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center gap-1.5 transition">
-                    <i data-lucide="code-2" class="w-4 h-4"></i>
-                    <span data-i18n="tabCode">Code & Export</span>
-                </button>
-            </div>
-
-            <!-- Active Team Status Pills (Desktop) -->
-            <div class="hidden lg:flex items-center gap-2 text-[11px]">
-                <span class="px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 font-medium">1. Architect</span>
-                <i data-lucide="arrow-right" class="w-3 h-3 text-slate-400"></i>
-                <span class="px-2.5 py-1 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-medium">2. Lead Dev</span>
-                <i data-lucide="arrow-right" class="w-3 h-3 text-slate-400"></i>
-                <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">3. QA Reviewer</span>
-            </div>
-        </div>
-    </nav>
-
-    <!-- =====================================================================
-         VIEW 1: COLLABORATIVE MULTI-AGENT GROUP CHAT ROOM
-    ====================================================================== -->
-    <main id="view-chat" class="flex-1 flex flex-col max-w-5xl w-full mx-auto overflow-hidden">
-        
-        <!-- Chat Messages Stream -->
-        <div id="chatMessagesContainer" class="flex-1 overflow-y-auto px-3 sm:px-6 py-4 space-y-4">
-            
-            <!-- Welcome Team Card -->
-            <div class="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
-                <div class="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                        <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
-                            <span class="text-lg">🤝</span>
-                            <span data-i18n="welcomeTitle">AI အဖွဲ့သား (၃) ဦး အသင့်ရှိနေပါပြီ</span>
-                        </h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" data-i18n="welcomeDesc">
-                            သင်လိုချင်တဲ့ App ပုံစံကို အောက်မှာ စာရိုက်ပြောလိုက်ပါ။ AI အဖွဲ့သား ၃ ဦးက ဒီ Chat Room ထဲမှာ အဆင့်ဆင့် တိုင်ပင်ဆွေးနွေးပြီး ပြီးပြည့်စုံတဲ့ Web App တစ်ခုကို တိုက်ရိုက် ဆောက်လုပ်ပေးပါလိမ့်မယ်။
-                        </p>
-                    </div>
-                    <button onclick="clearChatSession()" class="px-2.5 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-rose-500/15 hover:text-rose-500 transition shrink-0" data-i18n="newChatBtn">
-                        + အသစ်စမည်
-                    </button>
-                </div>
-
-                <!-- 3 Agent Role Cards -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                    <div class="p-3 rounded-xl bg-violet-500/5 border border-violet-500/20">
-                        <div class="font-bold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
-                            <span>🧠</span> <span>Product Architect</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1" data-i18n="role1Desc">App ဖွဲ့စည်းပုံ၊ UI/UX နှင့် User/Admin လုပ်ဆောင်ချက်များကို စီမံကိန်းဆွဲပေးသူ</p>
-                    </div>
-                    <div class="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20">
-                        <div class="font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
-                            <span>💻</span> <span>Lead Developer</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1" data-i18n="role2Desc">HTML, Tailwind CSS နှင့် Interactive JS ကုဒ်အပြည့်အစုံကို ရေးသားတည်ဆောက်သူ</p>
-                    </div>
-                    <div class="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
-                        <div class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                            <span>🛡️</span> <span>QA & UI Reviewer</span>
-                        </div>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1" data-i18n="role3Desc">Bug များ စစ်ဆေးပြင်ဆင်ပြီး ဖုန်း Screen နှင့် ကိုက်ညီအောင် အချောသတ်ပေးသူ</p>
-                    </div>
-                </div>
-
-                <!-- Starter Prompts -->
-                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <p class="text-[11px] font-semibold text-slate-400 mb-2" data-i18n="tryPrompts">စမ်းသပ်ရန် နမူနာ စာသားများ (နှိပ်၍ ထည့်နိုင်သည်)-</p>
-                    <div class="flex flex-wrap gap-1.5">
-                        <button onclick="fillPrompt('Korea speaking app ထုတ်ပေးပါ။ User Mode နဲ့ Admin Mode ခွဲပေးပါ။ User ဘက်မှာ ကိုရီးယားစာသားကို နှိပ်ရင် အသံထွက် (TTS) နားထောင်လို့ရမယ်၊ မြန်မာဘာသာပြန်ပါမယ်။ Admin ဘက်မှာ စကားလုံးအသစ်တွေ ထပ်ထည့်/ဖျက်လို့ရပါစေ။')" class="px-3 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800/90 hover:bg-indigo-500/15 hover:text-indigo-500 transition text-left">
-                            🇰🇷 Korea Speaking (Admin + User)
-                        </button>
-                        <button onclick="fillPrompt('ဆိုင်အရောင်းစာရင်းနှင့် အော်ဒါမှာယူနိုင်သော POS & Menu App တစ်ခု လုပ်ပေးပါ။ ပစ္စည်းအသစ်ထည့်ခြင်း၊ စျေးခြင်းတောင်းတွက်ချက်ခြင်းနှင့် နေ့စဉ်အရောင်းစုစုပေါင်း ပြသပေးပါ။')" class="px-3 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800/90 hover:bg-indigo-500/15 hover:text-indigo-500 transition text-left">
-                            🛍️ Mini Shop & POS App
-                        </button>
-                        <button onclick="fillPrompt('နေ့စဉ် ဝင်ငွေနှင့် ထွက်ငွေ စာရင်းမှတ်တမ်း App လုပ်ပေးပါ။ လက်ကျန်ငွေ အလိုအလျောက်တွက်ပေးပြီး အမျိုးအစားအလိုက် ဇယားနှင့် ပြပေးပါ။')" class="px-3 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800/90 hover:bg-indigo-500/15 hover:text-indigo-500 transition text-left">
-                            💰 ငွေစာရင်း Tracker App
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dynamic Chat Feed -->
-            <div id="chatStream" class="space-y-4"></div>
-        </div>
-
-        <!-- Bottom Prompt Composer -->
-        <div class="shrink-0 p-3 sm:p-4 bg-white/95 dark:bg-slate-950/95 border-t border-slate-200 dark:border-slate-800/80 backdrop-blur-md">
-            <div class="max-w-4xl mx-auto">
-                <div id="modeContextBadge" class="hidden mb-2 flex items-center justify-between px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-600 dark:text-indigo-400">
-                    <span class="flex items-center gap-1.5">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                        <span id="modeContextText">လက်ရှိ App ကို ဆက်လက်ပြင်ဆင်မည့် Mode (Iterative Refinement)</span>
-                    </span>
-                    <button onclick="resetToNewBuildMode()" class="underline font-semibold ml-2">App အသစ်စမည်</button>
-                </div>
-
-                <div class="flex items-end gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-indigo-500/50 transition">
-                    <textarea id="userPromptBox" rows="2" placeholder="သင်တည်ဆောက်လိုသော App ပုံစံကို စာရိုက်ပြောပြပါ... (ဥပမာ - Korea speaking app admin/user ခွဲပေးပါ)"
-                        onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); startTeamCollaboration(); }"
-                        class="flex-1 bg-transparent px-2.5 py-1.5 text-sm leading-relaxed focus:outline-none resize-none max-h-36"></textarea>
-                    
-                    <button id="sendPromptBtn" onclick="startTeamCollaboration()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-600/25 flex items-center gap-1.5 shrink-0 transition active:scale-95">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                        <span data-i18n="buildBtn">ဆောက်မည်</span>
-                    </button>
-                </div>
-                <div class="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-400">
-                    <span id="activeEngineSummary">Engine: Demo Simulation (Settings မှ API Key ထည့်ပါ)</span>
-                    <span>Shift + Enter = စာကြောင်းဆင်းရန်</span>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- =====================================================================
-         VIEW 2: LIVE APP SANDBOX PREVIEW
-    ====================================================================== -->
-    <section id="view-preview" class="hidden flex-1 flex-col bg-slate-100 dark:bg-[#050810] overflow-hidden">
-        <!-- Preview Controls Toolbar -->
-        <div class="shrink-0 px-4 py-2.5 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-                <span id="previewAppTitle" class="font-bold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-xs">Generated Web App</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">Live Sandbox</span>
-            </div>
-
-            <div class="flex items-center gap-1.5">
-                <button id="frameBtnMobile" onclick="setPreviewFrame('mobile')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white flex items-center gap-1 transition">
-                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Mobile</span>
-                </button>
-                <button id="frameBtnDesktop" onclick="setPreviewFrame('desktop')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex items-center gap-1 transition">
-                    <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Desktop</span>
-                </button>
-                <button onclick="reloadSandbox()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 transition" title="Reload App">
-                    <i data-lucide="rotate-cw" class="w-4 h-4"></i>
-                </button>
-                <button onclick="openFullscreenPreview()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 transition" title="Fullscreen">
-                    <i data-lucide="maximize-2" class="w-4 h-4"></i>
-                </button>
-                <button onclick="switchMainTab('code')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Export</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Sandbox Stage -->
-        <div class="flex-1 flex items-center justify-center p-3 sm:p-6 overflow-auto">
-            <div id="sandboxWrapper" class="w-[360px] sm:w-[375px] h-[660px] max-h-full bg-white rounded-[36px] phone-frame overflow-hidden flex flex-col transition-all duration-300">
-                <div id="simulatedPhoneNotch" class="h-6 bg-slate-900 text-white px-5 flex items-center justify-between text-[10px] font-medium shrink-0 select-none">
-                    <span>9:41</span>
-                    <div class="w-16 h-3.5 bg-black rounded-full"></div>
-                    <span>5G 100%</span>
-                </div>
-                <iframe id="sandboxIframe" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups" class="w-full flex-1 border-0 bg-white"></iframe>
-            </div>
-        </div>
-    </section>
-
-    <!-- =====================================================================
-         VIEW 3: SOURCE CODE & EXPORT PACKAGING STUDIO
-    ====================================================================== -->
-    <section id="view-code" class="hidden flex-1 flex-col max-w-6xl w-full mx-auto p-3 sm:p-6 gap-4 overflow-y-auto">
-        <!-- Export Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
-                <div>
-                    <h3 class="font-bold text-sm">1. Standalone HTML</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Browser တွင် တိုက်ရိုက်ဖွင့်သုံးနိုင်သော Single-File</p>
-                </div>
-                <button onclick="downloadStandaloneHtml()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shrink-0 flex items-center gap-1.5">
-                    <i data-lucide="file-code" class="w-4 h-4"></i>
-                    <span>.HTML</span>
-                </button>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
-                <div>
-                    <h3 class="font-bold text-sm">2. Mobile PWA Package</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">ဖုန်း Home Screen ပေါ် Install တင်နိုင်မည့် ZIP</p>
-                </div>
-                <button onclick="downloadPwaPackage()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shrink-0 flex items-center gap-1.5">
-                    <i data-lucide="package" class="w-4 h-4"></i>
-                    <span>PWA .ZIP</span>
-                </button>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3">
-                <div>
-                    <h3 class="font-bold text-sm">3. Copy Source Code</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">ကုဒ်အားလုံးကို Clipboard သို့ ကူးယူမည်</p>
-                </div>
-                <button onclick="copyGeneratedCode()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shrink-0 flex items-center gap-1.5">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                    <span id="copyBtnLabel">Copy</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Code Editor / Viewer Box -->
-        <div class="flex-1 min-h-[420px] bg-slate-950 border border-slate-800 rounded-2xl flex flex-col overflow-hidden shadow-lg">
-            <div class="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs">
-                <span class="font-mono text-slate-400">index.html — Production Output</span>
-                <span id="codeLineCount" class="font-mono text-slate-500">0 lines</span>
-            </div>
-            <textarea id="codeOutputArea" readonly class="flex-1 w-full p-4 font-mono text-xs leading-relaxed bg-slate-950 text-emerald-400 focus:outline-none resize-none"></textarea>
-        </div>
-    </section>
-
-    <!-- =====================================================================
-         FULLSCREEN PREVIEW OVERLAY
-    ====================================================================== -->
-    <div id="fullscreenOverlay" class="hidden fixed inset-0 z-50 bg-slate-950 flex flex-col">
-        <div class="h-12 px-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-white">
-            <span class="text-xs font-bold flex items-center gap-2">
-                <i data-lucide="maximize-2" class="w-4 h-4 text-indigo-400"></i>
-                <span id="fsTitle">Fullscreen App Preview</span>
-            </span>
-            <button onclick="closeFullscreenPreview()" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-xs font-semibold">Close Fullscreen</button>
-        </div>
-        <iframe id="fullscreenIframe" sandbox="allow-scripts allow-forms allow-modals allow-same-origin allow-popups" class="w-full flex-1 bg-white border-0"></iframe>
-    </div>
-
-    <!-- =====================================================================
-         MODAL 1: MULTI-PROVIDER & MULTI-AGENT API SETTINGS
-    ====================================================================== -->
-    <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl max-h-[92vh] flex flex-col">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
-                <div>
-                    <h3 class="font-bold text-base flex items-center gap-2">
-                        <i data-lucide="cpu" class="w-5 h-5 text-indigo-500"></i>
-                        <span>Multi-API & Agent Team Configuration</span>
-                    </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Gemini, Groq နှင့် OpenRouter API Key များ ထည့်သွင်းပြီး AI ၃ ဦးကို ချိတ်ဆက်ပါ</p>
-                </div>
-                <button onclick="closeModal('settingsModal')" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <div class="flex-1 overflow-y-auto py-4 space-y-5 pr-1">
-                <!-- Provider 1: Google Gemini (Up to 10 Keys with Auto-Rotation) -->
-                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="text-xs font-bold flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-                            <span>✨ 1. Google Gemini API Keys (Up to 10 Keys • Auto-Rotation)</span>
-                        </label>
-                        <span id="geminiBadgeCount" class="text-[11px] font-mono text-slate-400">0/10 Keys</span>
-                    </div>
-                    <textarea id="inputGeminiKeys" rows="3" placeholder="AIzaSy... (တစ်ကြောင်းလျှင် Key တစ်ခုစီ သို့မဟုတ် ကော်မာခံ၍ ၁၀ ခုအထိ ထည့်နိုင်ပါသည်)"
-                        class="w-full p-2.5 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 resize-none"></textarea>
-                    <p class="text-[11px] text-slate-500">Key တစ်ခု Limit ပြည့်သွားပါက (429 Error) နောက် Key တစ်ခုကို အလိုအလျောက် ပြောင်းသုံးပေးပါမည်။</p>
-                </div>
-
-                <!-- Provider 2 & 3: Groq & OpenRouter -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                        <label class="text-xs font-bold text-amber-600 dark:text-amber-400 block">⚡ 2. Groq API Key (Ultra-Fast)</label>
-                        <input id="inputGroqKey" type="password" placeholder="gsk_..."
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none">
-                        <p class="text-[10px] text-slate-500">Models: llama-3.3-70b, qwen-2.5-coder-32b</p>
-                    </div>
-
-                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-                        <label class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">🌐 3. OpenRouter API Key</label>
-                        <input id="inputOpenRouterKey" type="password" placeholder="sk-or-v1-..."
-                            class="w-full px-3 py-2 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none">
-                        <p class="text-[10px] text-slate-500">Supports DeepSeek V3, Qwen Coder Free, etc.</p>
-                    </div>
-                </div>
-
-                <!-- Per-Agent Engine & Model Assignment -->
-                <div class="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-bold text-indigo-600 dark:text-indigo-400">🤖 AI Agent တစ်ဦးချင်းစီအတွက် Model သတ်မှတ်ရန်</h4>
-                        <button onclick="autoAssignBestModels()" class="text-[11px] font-semibold underline text-indigo-500">Auto-Assign Best</button>
-                    </div>
-
-                    <!-- Agent 1 -->
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs">
-                        <span class="sm:col-span-4 font-semibold">🧠 1. Architect:</span>
-                        <select id="agent1Model" class="sm:col-span-8 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                            <option value="gemini:gemini-2.5-flash">Google Gemini 2.5 Flash</option>
-                            <option value="gemini:gemini-2.5-pro">Google Gemini 2.5 Pro</option>
-                            <option value="groq:llama-3.3-70b-versatile">Groq — Llama 3.3 70B Versatile</option>
-                            <option value="openrouter:deepseek/deepseek-chat-v3-0324:free">OpenRouter — DeepSeek V3 (Free)</option>
-                            <option value="openrouter:google/gemini-2.0-flash-exp:free">OpenRouter — Gemini 2.0 Flash (Free)</option>
-                        </select>
-                    </div>
-
-                    <!-- Agent 2 -->
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs">
-                        <span class="sm:col-span-4 font-semibold">💻 2. Lead Dev:</span>
-                        <select id="agent2Model" class="sm:col-span-8 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                            <option value="gemini:gemini-2.5-flash">Google Gemini 2.5 Flash</option>
-                            <option value="gemini:gemini-2.5-pro">Google Gemini 2.5 Pro</option>
-                            <option value="groq:qwen-2.5-coder-32b">Groq — Qwen 2.5 Coder 32B</option>
-                            <option value="openrouter:qwen/qwen-2.5-coder-32b-instruct:free">OpenRouter — Qwen 2.5 Coder (Free)</option>
-                            <option value="openrouter:deepseek/deepseek-chat-v3-0324:free">OpenRouter — DeepSeek V3 (Free)</option>
-                        </select>
-                    </div>
-
-                    <!-- Agent 3 -->
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs">
-                        <span class="sm:col-span-4 font-semibold">🛡️ 3. QA Reviewer:</span>
-                        <select id="agent3Model" class="sm:col-span-8 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                            <option value="gemini:gemini-2.5-flash">Google Gemini 2.5 Flash</option>
-                            <option value="gemini:gemini-2.5-pro">Google Gemini 2.5 Pro</option>
-                            <option value="groq:llama-3.3-70b-versatile">Groq — Llama 3.3 70B Versatile</option>
-                            <option value="openrouter:deepseek/deepseek-chat-v3-0324:free">OpenRouter — DeepSeek V3 (Free)</option>
-                        </select>
-                    </div>
-
-                    <!-- Custom OpenRouter Model Override -->
-                    <div>
-                        <label class="text-[11px] text-slate-500 block mb-1">Optional: Custom OpenRouter Model ID (အသုံးပြုလိုပါက ထည့်ပါ)</label>
-                        <input id="customOpenRouterModel" type="text" placeholder="ဥပမာ - anthropic/claude-3.5-sonnet သို့မဟုတ် meta-llama/llama-3.1-405b-instruct"
-                            class="w-full px-3 py-1.5 rounded-xl text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800 shrink-0">
-                <span class="text-[11px] text-slate-400">Keys are stored locally in your browser.</span>
-                <div class="flex gap-2">
-                    <button onclick="closeModal('settingsModal')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800">Cancel</button>
-                    <button onclick="saveSettings()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md">Save & Connect</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- =====================================================================
-         MODAL 2: SAVED PROJECTS HISTORY
-    ====================================================================== -->
-    <div id="projectsModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-5 shadow-2xl max-h-[85vh] flex flex-col">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 class="font-bold text-base flex items-center gap-2">
-                    <i data-lucide="folder-git-2" class="w-4 h-4 text-indigo-500"></i>
-                    <span>သိမ်းဆည်းထားသော App များ (Saved Projects)</span>
-                </h3>
-                <button onclick="closeModal('projectsModal')" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div id="projectsListContainer" class="flex-1 overflow-y-auto py-3 space-y-2.5"></div>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toastBox" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2">
-        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 dark:text-emerald-600"></i>
-        <span id="toastText">Ready</span>
-    </div>
-
-    <script>
-        // =========================================================================
-        // 1. APPLICATION STATE & STORAGE
-        // =========================================================================
-        let lang = 'my';
-        let isBuilding = false;
-        let currentHtmlCode = '';
-        let currentAppTitle = 'Korea Speaking Pro';
-        let geminiKeyIndex = 0;
-
-        let config = JSON.parse(localStorage.getItem('multiagent_studio_cfg') || 'null') || {
-            geminiKeys: [],
-            groqKey: '',
-            openRouterKey: '',
-            agent1: 'gemini:gemini-2.5-flash',
-            agent2: 'gemini:gemini-2.5-flash',
-            agent3: 'gemini:gemini-2.5-flash',
-            customOrModel: ''
-        };
-
-        let savedProjects = JSON.parse(localStorage.getItem('multiagent_studio_projects') || '[]');
-
-        const translations = {
-            my: {
-                subtitle: 'AI ၃ ဦး အတူတိုင်ပင်ပြီး App တည်ဆောက်ပေးမည့် စတူဒီယို',
-                projectsBtn: 'App မှတ်တမ်း',
-                tabChat: 'AI အဖွဲ့လိုက် Chat',
-                tabPreview: 'Live Preview',
-                tabCode: 'Code & Export',
-                welcomeTitle: 'AI အဖွဲ့သား (၃) ဦး အသင့်ရှိနေပါပြီ',
-                welcomeDesc: 'သင်လိုချင်တဲ့ App ပုံစံကို အောက်မှာ စာရိုက်ပြောလိုက်ပါ။ AI အဖွဲ့သား ၃ ဦးက ဒီ Chat Room ထဲမှာ အဆင့်ဆင့် တိုင်ပင်ဆွေးနွေးပြီး ပြီးပြည့်စုံတဲ့ Web App တစ်ခုကို တိုက်ရိုက် ဆောက်လုပ်ပေးပါလိမ့်မယ်။',
-                newChatBtn: '+ အသစ်စမည်',
-                role1Desc: 'App ဖွဲ့စည်းပုံ၊ UI/UX နှင့် User/Admin လုပ်ဆောင်ချက်များကို စီမံကိန်းဆွဲပေးသူ',
-                role2Desc: 'HTML, Tailwind CSS နှင့် Interactive JS ကုဒ်အပြည့်အစုံကို ရေးသားတည်ဆောက်သူ',
-                role3Desc: 'Bug များ စစ်ဆေးပြင်ဆင်ပြီး ဖုန်း Screen နှင့် ကိုက်ညီအောင် အချောသတ်ပေးသူ',
-                tryPrompts: 'စမ်းသပ်ရန် နမူနာ စာသားများ (နှိပ်၍ ထည့်နိုင်သည်)-',
-                buildBtn: 'ဆောက်မည်'
-            },
-            en: {
-                subtitle: '3 Specialized AI Agents Collaborating to Build Your App',
-                projectsBtn: 'Saved Apps',
-                tabChat: 'AI Team Chat',
-                tabPreview: 'Live Preview',
-                tabCode: 'Code & Export',
-                welcomeTitle: 'Your 3-Agent AI Dev Team is Ready',
-                welcomeDesc: 'Describe your app idea below. The Product Architect, Lead Developer, and QA Reviewer will discuss, write code, and deliver a complete working web app.',
-                newChatBtn: '+ New Session',
-                role1Desc: 'Plans app architecture, UI/UX layout, and User/Admin roles',
-                role2Desc: 'Writes full self-contained HTML, Tailwind CSS & interactive JS',
-                role3Desc: 'Audits for bugs, responsiveness, and polishes final output',
-                tryPrompts: 'Try Sample Prompts (Click to fill):',
-                buildBtn: 'Build App'
-            }
-        };
-
-        // =========================================================================
-        // 2. INITIALIZATION & UI HELPERS
-        // =========================================================================
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            syncSettingsUI();
-            updateSavedBadge();
-            loadStarterApp();
-        });
-
-        function toggleLang() {
-            lang = lang === 'my' ? 'en' : 'my';
-            document.getElementById('langBtnText').textContent = lang === 'my' ? 'EN' : 'မြန်မာ';
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const k = el.getAttribute('data-i18n');
-                if (translations[lang][k]) el.textContent = translations[lang][k];
-            });
-        }
-
-        function toggleTheme() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        function showToast(msg) {
-            const box = document.getElementById('toastBox');
-            document.getElementById('toastText').textContent = msg;
-            box.classList.remove('opacity-0', 'translate-y-2');
-            setTimeout(() => box.classList.add('opacity-0', 'translate-y-2'), 2800);
-        }
-
-        function switchMainTab(tab) {
-            ['chat', 'preview', 'code'].forEach(t => {
-                const view = document.getElementById(`view-${t}`);
-                const btn = document.getElementById(`tabBtn-${t}`);
-                if (t === tab) {
-                    view.classList.remove('hidden');
-                    view.classList.add('flex');
-                    btn.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5 transition';
-                } else {
-                    view.classList.add('hidden');
-                    view.classList.remove('flex');
-                    btn.className = 'flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center gap-1.5 transition';
-                }
-            });
-            if (tab === 'preview') {
-                document.getElementById('previewReadyDot').classList.add('hidden');
-            }
-        }
-
-        function setPreviewFrame(mode) {
-            const wrapper = document.getElementById('sandboxWrapper');
-            const notch = document.getElementById('simulatedPhoneNotch');
-            const btnM = document.getElementById('frameBtnMobile');
-            const btnD = document.getElementById('frameBtnDesktop');
-            if (mode === 'mobile') {
-                wrapper.className = 'w-[360px] sm:w-[375px] h-[660px] max-h-full bg-white rounded-[36px] phone-frame overflow-hidden flex flex-col transition-all duration-300';
-                notch.classList.remove('hidden');
-                btnM.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white flex items-center gap-1 transition';
-                btnD.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex items-center gap-1 transition';
-            } else {
-                wrapper.className = 'w-full h-full bg-white rounded-2xl border border-slate-300 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col transition-all duration-300';
-                notch.classList.add('hidden');
-                btnD.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white flex items-center gap-1 transition';
-                btnM.className = 'px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-300 flex items-center gap-1 transition';
-            }
-        }
-
-        function fillPrompt(text) {
-            const box = document.getElementById('userPromptBox');
-            box.value = text;
-            box.focus();
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        // =========================================================================
-        // 3. SETTINGS & MULTI-PROVIDER KEY MANAGEMENT
-        // =========================================================================
-        function syncSettingsUI() {
-            document.getElementById('inputGeminiKeys').value = (config.geminiKeys || []).join('\n');
-            document.getElementById('inputGroqKey').value = config.groqKey || '';
-            document.getElementById('inputOpenRouterKey').value = config.openRouterKey || '';
-            document.getElementById('agent1Model').value = config.agent1 || 'gemini:gemini-2.5-flash';
-            document.getElementById('agent2Model').value = config.agent2 || 'gemini:gemini-2.5-flash';
-            document.getElementById('agent3Model').value = config.agent3 || 'gemini:gemini-2.5-flash';
-            document.getElementById('customOpenRouterModel').value = config.customOrModel || '';
-
-            const gCount = (config.geminiKeys || []).length;
-            document.getElementById('geminiBadgeCount').textContent = `${gCount}/10 Keys`;
-
-            const activeProviders = [];
-            if (gCount > 0) activeProviders.push(`Gemini (${gCount})`);
-            if (config.groqKey) activeProviders.push('Groq');
-            if (config.openRouterKey) activeProviders.push('OpenRouter');
-
-            const dot = document.getElementById('apiIndicatorDot');
-            const headerStatus = document.getElementById('apiHeaderStatus');
-            const summary = document.getElementById('activeEngineSummary');
-
-            if (activeProviders.length > 0) {
-                dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-                headerStatus.textContent = activeProviders.join(' + ');
-                summary.textContent = `Connected: ${activeProviders.join(', ')} • Multi-Agent Live Mode`;
-            } else {
-                dot.className = 'w-2 h-2 rounded-full bg-amber-500';
-                headerStatus.textContent = 'Demo Mode (Add API)';
-                summary.textContent = 'Mode: Built-in Demo Simulation (တကယ့် AI သုံးရန် API Setup မှ Key ထည့်ပါ)';
-            }
-        }
-
-        function autoAssignBestModels() {
-            if (config.geminiKeys.length > 0) {
-                document.getElementById('agent1Model').value = 'gemini:gemini-2.5-flash';
-                document.getElementById('agent2Model').value = 'gemini:gemini-2.5-flash';
-                document.getElementById('agent3Model').value = 'gemini:gemini-2.5-flash';
-            } else if (config.groqKey) {
-                document.getElementById('agent1Model').value = 'groq:llama-3.3-70b-versatile';
-                document.getElementById('agent2Model').value = 'groq:qwen-2.5-coder-32b';
-                document.getElementById('agent3Model').value = 'groq:llama-3.3-70b-versatile';
-            } else if (config.openRouterKey) {
-                document.getElementById('agent1Model').value = 'openrouter:deepseek/deepseek-chat-v3-0324:free';
-                document.getElementById('agent2Model').value = 'openrouter:qwen/qwen-2.5-coder-32b-instruct:free';
-                document.getElementById('agent3Model').value = 'openrouter:deepseek/deepseek-chat-v3-0324:free';
-            }
-            showToast('Recommended models assigned!');
-        }
-
-        function saveSettings() {
-            const rawGemini = document.getElementById('inputGeminiKeys').value;
-            config.geminiKeys = rawGemini.split(/[\n,]+/).map(k => k.trim()).filter(k => k.length > 10).slice(0, 10);
-            config.groqKey = document.getElementById('inputGroqKey').value.trim();
-            config.openRouterKey = document.getElementById('inputOpenRouterKey').value.trim();
-            config.agent1 = document.getElementById('agent1Model').value;
-            config.agent2 = document.getElementById('agent2Model').value;
-            config.agent3 = document.getElementById('agent3Model').value;
-            config.customOrModel = document.getElementById('customOpenRouterModel').value.trim();
-
-            localStorage.setItem('multiagent_studio_cfg', JSON.stringify(config));
-            syncSettingsUI();
-            closeModal('settingsModal');
-            showToast('AI Team & API Settings Saved!');
-        }
-
-        function hasAnyApiKey() {
-            return config.geminiKeys.length > 0 || !!config.groqKey || !!config.openRouterKey;
-        }
-
-        // =========================================================================
-        // 4. MULTI-AGENT COLLABORATIVE ORCHESTRATION PIPELINE
-        // =========================================================================
-        async function startTeamCollaboration() {
-            if (isBuilding) return;
-            const inputBox = document.getElementById('userPromptBox');
-            const userPrompt = inputBox.value.trim();
-            if (!userPrompt) {
-                showToast('ကျေးဇူးပြု၍ လိုချင်သော App ပုံစံ စာရိုက်ထည့်ပါ');
-                return;
-            }
-
-            isBuilding = true;
-            inputBox.value = '';
-            const sendBtn = document.getElementById('sendPromptBtn');
-            sendBtn.disabled = true;
-            sendBtn.classList.add('opacity-50');
-
-            const isRefinement = !document.getElementById('modeContextBadge').classList.contains('hidden') && currentHtmlCode.length > 100;
-
-            // 1. Append User Message Bubble
-            appendUserBubble(userPrompt, isRefinement);
-
-            try {
-                if (!hasAnyApiKey()) {
-                    // Built-in Smart Multi-Agent Demo Simulation
-                    await runSimulatedCollaboration(userPrompt, isRefinement);
-                } else {
-                    // Real Multi-Agent API Pipeline
-                    await runRealMultiAgentPipeline(userPrompt, isRefinement);
-                }
-            } catch (err) {
-                console.error(err);
-                appendSystemError(`⚠️ API Error: ${err.message}. Settings ထဲမှ API Key များကို ပြန်လည်စစ်ဆေးပါ။`);
-            } finally {
-                isBuilding = false;
-                sendBtn.disabled = false;
-                sendBtn.classList.remove('opacity-50');
-            }
-        }
-
-        async function runRealMultiAgentPipeline(userPrompt, isRefinement) {
-            // --- AGENT 1: PRODUCT ARCHITECT ---
-            const typing1 = appendTypingIndicator('Product Architect', '🧠', 'violet', getAgentProviderLabel(config.agent1));
-            const archSystem = `You are the Product Architect in an elite AI App Development Team.
-Analyze the user's app request (which may be in Burmese or English) and produce a concise, structured technical blueprint (in Burmese + English technical terms) covering:
-1. App Title & Core Purpose
-2. User Roles (e.g., User Mode vs Admin Mode if requested)
-3. Key Screens, Interactive Features & LocalStorage Data Structure
-4. UI/UX Color Palette & Mobile-First Layout
-Keep it crisp, clear, and under 220 words so the Lead Developer can immediately build it.`;
-
-            const archInput = isRefinement
-                ? `The user wants to UPDATE an existing web app with this request: "${userPrompt}". Summarize the exact UI and functional modifications needed.`
-                : `User App Request: "${userPrompt}"`;
-
-            const architectSpec = await invokeAgentLLM(config.agent1, archSystem, archInput);
-            typing1.remove();
-            appendAgentBubble({
-                name: 'Product Architect',
-                role: 'စီမံကိန်းနှင့် ဒီဇိုင်းဗိသုကာ',
-                avatar: '🧠',
-                color: 'violet',
-                provider: getAgentProviderLabel(config.agent1),
-                text: architectSpec
-            });
-
-            // --- AGENT 2: LEAD DEVELOPER ---
-            const typing2 = appendTypingIndicator('Lead Developer', '💻', 'sky', getAgentProviderLabel(config.agent2));
-            const devSystem = `You are the Lead Full-Stack Web Developer.
-Based on the user's request and the Product Architect's blueprint, write a COMPLETE, SELF-CONTAINED, WORKING single-file HTML5 web application.
-CRITICAL RULES:
-- Output ONLY valid HTML wrapped inside \`\`\`html and \`\`\` fences. No conversational chatter outside the code block.
-- Include <meta name="viewport" content="width=device-width, initial-scale=1.0"> and Tailwind CSS via <script src="https://cdn.tailwindcss.com"><\/script>.
-- Include Google Fonts 'Noto Sans Myanmar' and 'Inter' for crisp Burmese & English rendering.
-- Make ALL interactive features 100% functional with vanilla JavaScript and localStorage persistence.
-- If Admin & User modes are requested, implement a clear toggle switch in the header so the user can test both modes immediately, and allow Admin to add/edit/delete items that reflect live in User mode.
-- If Language/Speaking is requested (like Korean/English speaking), implement Web Speech API (window.speechSynthesis) audio pronunciation buttons + practice exercises.
-- NEVER use alert() or confirm(); use custom toast banners or inline modals.`;
-
-            const devInput = isRefinement
-                ? `Update the following existing HTML application according to the Architect's update plan and user request "${userPrompt}".\n\nArchitect Plan:\n${architectSpec}\n\nExisting HTML:\n${currentHtmlCode}`
-                : `User Request: "${userPrompt}"\n\nArchitect Blueprint:\n${architectSpec}\n\nBuild the complete single-file HTML web application now.`;
-
-            const devRawOutput = await invokeAgentLLM(config.agent2, devSystem, devInput);
-            const draftHtml = extractHtmlFromResponse(devRawOutput);
-            typing2.remove();
-
-            appendAgentBubble({
-                name: 'Lead Developer',
-                role: 'အဓိက ကုဒ်ရေးသားသူ',
-                avatar: '💻',
-                color: 'sky',
-                provider: getAgentProviderLabel(config.agent2),
-                text: `Blueprint အတိုင်း ကုဒ်ရေးသားမှု ပြီးစီးပါပြီ (${draftHtml.split('\n').length} lines)။ QA & UI Reviewer ထံသို့ စစ်ဆေးအချောသတ်ရန် လွှဲပြောင်းပေးလိုက်ပါပြီ။`,
-                codePreview: draftHtml.slice(0, 450) + '\n<!-- ... code passed to QA Reviewer ... -->'
-            });
-
-            // --- AGENT 3: QA & UI REVIEWER ---
-            const typing3 = appendTypingIndicator('QA & UI Reviewer', '🛡️', 'emerald', getAgentProviderLabel(config.agent3));
-            const qaSystem = `You are the Senior QA Engineer & UI/UX Reviewer.
-Inspect the Lead Developer's HTML code against the user's original request. Fix any JavaScript syntax errors, broken buttons, missing Burmese text support, or mobile overflow issues, and ensure all features work seamlessly.
-Output:
-1. A brief 2-3 sentence summary in Burmese of what you verified and polished.
-2. Followed immediately by the FINAL complete, self-contained HTML code wrapped in \`\`\`html and \`\`\` fences.`;
-
-            const qaInput = `Original User Request: "${userPrompt}"\n\nLead Developer's Draft HTML:\n\`\`\`html\n${draftHtml}\n\`\`\`\n\nReview, fix any bugs, polish mobile responsiveness, and output the final production HTML.`;
-
-            const qaRawOutput = await invokeAgentLLM(config.agent3, qaSystem, qaInput);
-            const finalHtml = extractHtmlFromResponse(qaRawOutput) || draftHtml;
-            const qaNotes = qaRawOutput.replace(/```html[\s\S]*?```/gi, '').trim() || 'ကုဒ်နှင့် Mobile UI အားလုံး စစ်ဆေးအတည်ပြုပြီးပါပြီ။';
-            typing3.remove();
-
-            const extractedTitle = extractTitleFromHtml(finalHtml) || userPrompt.slice(0, 28);
-            applyBuiltApp(finalHtml, extractedTitle, userPrompt);
-
-            appendAgentBubble({
-                name: 'QA & UI Reviewer',
-                role: 'စစ်ဆေးနှင့် အဆင့်မြှင့်တင်သူ',
-                avatar: '🛡️',
-                color: 'emerald',
-                provider: getAgentProviderLabel(config.agent3),
-                text: qaNotes,
-                showLaunchActions: true,
-                appTitle: extractedTitle
-            });
-        }
-
-        // =========================================================================
-        // 5. UNIFIED LLM ROUTER (GEMINI MULTI-KEY ROTATION + GROQ + OPENROUTER)
-        // =========================================================================
-        async function invokeAgentLLM(agentSelection, systemPrompt, userMessage) {
-            const [provider, defaultModel] = agentSelection.split(':');
-
-            if (provider === 'gemini') {
-                if (config.geminiKeys.length > 0) {
-                    return await callGeminiWithRotation(defaultModel, systemPrompt, userMessage);
-                }
-                // Fallback to Groq or OpenRouter if user didn't enter Gemini key
-                if (config.groqKey) return await callOpenAICompatible('https://api.groq.com/openai/v1/chat/completions', config.groqKey, 'llama-3.3-70b-versatile', systemPrompt, userMessage);
-                if (config.openRouterKey) return await callOpenAICompatible('https://openrouter.ai/api/v1/chat/completions', config.openRouterKey, config.customOrModel || 'deepseek/deepseek-chat-v3-0324:free', systemPrompt, userMessage);
-                throw new Error('No Gemini API key configured.');
-            }
-
-            if (provider === 'groq') {
-                if (!config.groqKey) throw new Error('Groq API Key မထည့်ရသေးပါ။ Settings တွင် ထည့်သွင်းပါ။');
-                return await callOpenAICompatible('https://api.groq.com/openai/v1/chat/completions', config.groqKey, defaultModel, systemPrompt, userMessage);
-            }
-
-            if (provider === 'openrouter') {
-                if (!config.openRouterKey) throw new Error('OpenRouter API Key မထည့်ရသေးပါ။ Settings တွင် ထည့်သွင်းပါ။');
-                const modelToUse = config.customOrModel || defaultModel;
-                return await callOpenAICompatible('https://openrouter.ai/api/v1/chat/completions', config.openRouterKey, modelToUse, systemPrompt, userMessage);
-            }
-
-            throw new Error('Unknown AI provider selected.');
-        }
-
-        async function callGeminiWithRotation(model, systemPrompt, userMessage) {
-            let lastErr = null;
-            const totalKeys = config.geminiKeys.length;
-            for (let i = 0; i < totalKeys; i++) {
-                const idx = (geminiKeyIndex + i) % totalKeys;
-                const apiKey = config.geminiKeys[idx];
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            contents: [{ parts: [{ text: userMessage }] }],
-                            generationConfig: { temperature: 0.65 }
-                        })
-                    });
-                    if (!res.ok) {
-                        const errData = await res.json().catch(() => ({}));
-                        lastErr = new Error(errData.error?.message || `Gemini HTTP ${res.status}`);
-                        continue; // Rotate to next key
-                    }
-                    const data = await res.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error('Empty response from Gemini');
-                    geminiKeyIndex = (idx + 1) % totalKeys;
-                    return text;
-                } catch (e) {
-                    lastErr = e;
-                }
-            }
-            throw lastErr || new Error('All Gemini API keys failed.');
-        }
-
-        async function callOpenAICompatible(endpoint, apiKey, model, systemPrompt, userMessage) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            };
-            if (endpoint.includes('openrouter.ai')) {
-                headers['HTTP-Referer'] = window.location.href;
-                headers['X-Title'] = 'Multi-Agent AI App Studio';
-            }
-
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: userMessage }
-                    ],
-                    temperature: 0.65
-                })
-            });
-
-            if (!res.ok) {
-                const errJson = await res.json().catch(() => ({}));
-                throw new Error(errJson.error?.message || `API Error ${res.status}`);
-            }
-
-            const data = await res.json();
-            return data.choices?.[0]?.message?.content || '';
-        }
-
-        function getAgentProviderLabel(sel) {
-            const [p, m] = sel.split(':');
-            if (p === 'gemini') return `Gemini (${m})`;
-            if (p === 'groq') return `Groq (${m})`;
-            return `OpenRouter (${config.customOrModel || m.split('/').pop()})`;
-        }
-
-        // =========================================================================
-        // 6. BUILT-IN DEMO SIMULATION (WHEN NO API KEYS ARE CONFIGURED)
-        // =========================================================================
-        async function runSimulatedCollaboration(userPrompt, isRefinement) {
-            const t1 = appendTypingIndicator('Product Architect', '🧠', 'violet', 'Demo Simulation');
-            await sleep(800);
-            t1.remove();
-            appendAgentBubble({
-                name: 'Product Architect',
-                role: 'စီမံကိန်းနှင့် ဒီဇိုင်းဗိသုကာ',
-                avatar: '🧠',
-                color: 'violet',
-                provider: 'Demo Engine',
-                text: `တောင်းဆိုချက် "${userPrompt}" အတွက် App ဖွဲ့စည်းပုံကို ရေးဆွဲပြီးပါပြီ-\n• Role System: User Mode နှင့် Admin Panel ခွဲခြားထားခြင်း\n• Interactive Core: အသံထွက် (TTS) / ဒေတာထည့်သွင်းမှုနှင့် localStorage စနစ်\n• Mobile-First UI: ဖုန်း Screen နှင့် ကိုက်ညီသော Card Layout`
-            });
-
-            const t2 = appendTypingIndicator('Lead Developer', '💻', 'sky', 'Demo Simulation');
-            await sleep(950);
-            t2.remove();
-            const generatedHtml = buildIntelligentDemoHtml(userPrompt, isRefinement ? currentHtmlCode : '');
-            appendAgentBubble({
-                name: 'Lead Developer',
-                role: 'အဓိက ကုဒ်ရေးသားသူ',
-                avatar: '💻',
-                color: 'sky',
-                provider: 'Demo Engine',
-                text: `HTML5 + Tailwind CSS + JavaScript ကုဒ်အပြည့်အစုံ ရေးသားပြီးပါပြီ။ QA Reviewer ထံ စစ်ဆေးရန် ပေးပို့လိုက်ပါပြီ။`,
-                codePreview: generatedHtml.slice(0, 380) + '\n<!-- ... passed to QA Reviewer ... -->'
-            });
-
-            const t3 = appendTypingIndicator('QA & UI Reviewer', '🛡️', 'emerald', 'Demo Simulation');
-            await sleep(750);
-            t3.remove();
-
-            const title = extractTitleFromHtml(generatedHtml) || 'Smart App';
-            applyBuiltApp(generatedHtml, title, userPrompt);
-
-            appendAgentBubble({
-                name: 'QA & UI Reviewer',
-                role: 'စစ်ဆေးနှင့် အဆင့်မြှင့်တင်သူ',
-                avatar: '🛡️',
-                color: 'emerald',
-                provider: 'Demo Engine',
-                text: `Mobile Screen အရွယ်အစား၊ ခလုတ်များနှင့် မြန်မာစာ ဖောင့်များကို စစ်ဆေးအတည်ပြုပြီးပါပြီ။ (မှတ်ချက်- မည်သည့် App ပုံစံမဆို AI အစစ်ဖြင့် စိတ်ကြိုက်ထုတ်လိုပါက ညာဘက်အပေါ်ရှိ "API Setup" တွင် Gemini / Groq Key ထည့်သွင်းပါ)`,
-                showLaunchActions: true,
-                appTitle: title
-            });
-        }
-
-        function buildIntelligentDemoHtml(prompt, existingHtml) {
-            const p = prompt.toLowerCase();
-            if (existingHtml && /dark|အမဲ|ည/.test(p)) {
-                return existingHtml.replace('bg-slate-50 text-slate-900', 'bg-slate-950 text-slate-100');
-            }
-            if (/korea|korean|speaking|ကိုရီးယား|စကားပြော|english/.test(p)) {
-                return getKoreaSpeakingTemplate();
-            }
-            if (/shop|pos|menu|cafe|ဆိုင်|အရောင်း|စျေး/.test(p)) {
-                return getPosShopTemplate();
-            }
-            return getKoreaSpeakingTemplate();
-        }
-
-        // =========================================================================
-        // 7. CHAT UI RENDERING HELPERS
-        // =========================================================================
-        function appendUserBubble(text, isRefinement) {
-            const stream = document.getElementById('chatStream');
-            const div = document.createElement('div');
-            div.className = 'flex justify-end';
-            div.innerHTML = `
-                <div class="max-w-[85%] sm:max-w-[75%] bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-md">
-                    ${isRefinement ? '<div class="text-[10px] uppercase tracking-wider font-bold text-indigo-200 mb-1">🔄 App Update Request</div>' : ''}
-                    <p class="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(text)}</p>
-                </div>`;
-            stream.appendChild(div);
-            scrollChatBottom();
-        }
-
-        function appendTypingIndicator(agentName, avatar, color, provider) {
-            const stream = document.getElementById('chatStream');
-            const div = document.createElement('div');
-            div.className = 'flex items-start gap-2.5';
-            div.innerHTML = `
-                <div class="w-8 h-8 rounded-xl bg-${color}-500/15 border border-${color}-500/30 flex items-center justify-center text-base shrink-0">${avatar}</div>
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                    <div class="flex items-center gap-2 mb-1.5">
-                        <span class="text-xs font-bold text-${color}-600 dark:text-${color}-400">${agentName}</span>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 font-mono">${escapeHtml(provider)}</span>
-                    </div>
-                    <div class="flex items-center gap-1.5 h-4">
-                        <span class="w-2 h-2 rounded-full bg-${color}-500 dot-bounce"></span>
-                        <span class="w-2 h-2 rounded-full bg-${color}-500 dot-bounce"></span>
-                        <span class="w-2 h-2 rounded-full bg-${color}-500 dot-bounce"></span>
-                    </div>
-                </div>`;
-            stream.appendChild(div);
-            scrollChatBottom();
-            return div;
-        }
-
-        function appendAgentBubble({ name, role, avatar, color, provider, text, codePreview, showLaunchActions, appTitle }) {
-            const stream = document.getElementById('chatStream');
-            const div = document.createElement('div');
-            div.className = 'flex items-start gap-2.5';
-            div.innerHTML = `
-                <div class="w-8 h-8 rounded-xl bg-${color}-500/15 border border-${color}-500/30 flex items-center justify-center text-base shrink-0 mt-0.5">${avatar}</div>
-                <div class="flex-1 min-w-0 bg-white dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-2xl rounded-tl-sm p-3.5 sm:p-4 shadow-sm space-y-2.5">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs sm:text-sm font-bold text-${color}-600 dark:text-${color}-400">${name}</span>
-                            <span class="text-[11px] text-slate-400">• ${role}</span>
-                        </div>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">${escapeHtml(provider)}</span>
-                    </div>
-                    <div class="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">${escapeHtml(text)}</div>
-                    ${codePreview ? `<pre class="p-2.5 rounded-xl bg-slate-950 text-emerald-400 font-mono text-[11px] overflow-x-auto border border-slate-800">${escapeHtml(codePreview)}</pre>` : ''}
-                    ${showLaunchActions ? `
-                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-                        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-                            <span>"${escapeHtml(appTitle)}" အဆင်သင့်ဖြစ်ပါပြီ!</span>
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="switchMainTab('preview')" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm flex items-center gap-1.5 transition">
-                                <i data-lucide="play" class="w-3.5 h-3.5"></i>
-                                <span>Live Preview ဖွင့်ကြည့်မည်</span>
-                            </button>
-                            <button onclick="switchMainTab('code')" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold transition">
-                                Export / Code
-                            </button>
-                        </div>
-                    </div>` : ''}
-                </div>`;
-            stream.appendChild(div);
-            lucide.createIcons();
-            scrollChatBottom();
-        }
-
-        function appendSystemError(msg) {
-            const stream = document.getElementById('chatStream');
-            const div = document.createElement('div');
-            div.className = 'p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-medium';
-            div.textContent = msg;
-            stream.appendChild(div);
-            scrollChatBottom();
-        }
-
-        function scrollChatBottom() {
-            const c = document.getElementById('chatMessagesContainer');
-            c.scrollTop = c.scrollHeight;
-        }
-
-        function clearChatSession() {
-            document.getElementById('chatStream').innerHTML = '';
-            resetToNewBuildMode();
-            showToast('Chat အသစ် စတင်လိုက်ပါပြီ');
-        }
-
-        function resetToNewBuildMode() {
-            document.getElementById('modeContextBadge').classList.add('hidden');
-            document.getElementById('userPromptBox').placeholder = 'သင်တည်ဆောက်လိုသော App ပုံစံကို စာရိုက်ပြောပြပါ...';
-        }
-
-        // =========================================================================
-        // 8. APPLY BUILT APP, SANDBOX, EXPORT & HISTORY
-        // =========================================================================
-        function applyBuiltApp(html, title, prompt, saveHistory = true) {
-            currentHtmlCode = html;
-            currentAppTitle = title;
-
-            document.getElementById('sandboxIframe').srcdoc = html;
-            document.getElementById('previewAppTitle').textContent = title;
-            document.getElementById('codeOutputArea').value = html;
-            document.getElementById('codeLineCount').textContent = `${html.split('\n').length} lines`;
-            document.getElementById('previewReadyDot').classList.remove('hidden');
-
-            // Enable iterative refinement badge
-            document.getElementById('modeContextBadge').classList.remove('hidden');
-            document.getElementById('modeContextText').textContent = `"${title}" ကို ဆက်လက်ပြင်ဆင်မည့် Mode (ပြင်ချင်တာ ထပ်ပြောနိုင်သည်)`;
-            document.getElementById('userPromptBox').placeholder = 'ဒီ App ထဲမှာ ထပ်ဖြည့်ချင်တာ သို့မဟုတ် ပြင်ချင်တာ စာရိုက်ပြောပါ...';
-
-            if (saveHistory) {
-                savedProjects.unshift({
-                    id: Date.now().toString(),
-                    title,
-                    prompt,
-                    html,
-                    date: new Date().toLocaleString()
-                });
-                if (savedProjects.length > 20) savedProjects.pop();
-                localStorage.setItem('multiagent_studio_projects', JSON.stringify(savedProjects));
-                updateSavedBadge();
-            }
-        }
-
-        function reloadSandbox() {
-            document.getElementById('sandboxIframe').srcdoc = currentHtmlCode;
-            showToast('Sandbox reloaded');
-        }
-
-        function openFullscreenPreview() {
-            document.getElementById('fsTitle').textContent = currentAppTitle;
-            document.getElementById('fullscreenIframe').srcdoc = currentHtmlCode;
-            document.getElementById('fullscreenOverlay').classList.remove('hidden');
-        }
-
-        function closeFullscreenPreview() {
-            document.getElementById('fullscreenOverlay').classList.add('hidden');
-        }
-
-        function copyGeneratedCode() {
-            const area = document.getElementById('codeOutputArea');
-            area.select();
-            document.execCommand('copy');
-            document.getElementById('copyBtnLabel').textContent = 'Copied!';
-            showToast('HTML Code Copied!');
-            setTimeout(() => { document.getElementById('copyBtnLabel').textContent = 'Copy'; }, 2000);
-        }
-
-        function downloadStandaloneHtml() {
-            const blob = new Blob([currentHtmlCode], { type: 'text/html;charset=utf-8' });
-            triggerFileDownload(blob, `${slugify(currentAppTitle)}.html`);
-            showToast('Standalone .HTML Downloaded!');
-        }
-
-        async function downloadPwaPackage() {
-            const zip = new JSZip();
-            const slug = slugify(currentAppTitle);
-            const manifest = {
-                name: currentAppTitle,
-                short_name: currentAppTitle.slice(0, 12),
-                start_url: './index.html',
-                display: 'standalone',
-                background_color: '#0f172a',
-                theme_color: '#4f46e5',
-                icons: [{
-                    src: `https://placehold.co/512x512/4f46e5/ffffff?text=${encodeURIComponent(currentAppTitle.slice(0,2))}`,
-                    sizes: '512x512',
-                    type: 'image/png'
-                }]
-            };
-            const sw = `self.addEventListener('install', e => e.waitUntil(caches.open('${slug}-v1').then(c => c.addAll(['./','./index.html']))));self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`;
-            zip.file('index.html', currentHtmlCode);
-            zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-            zip.file('sw.js', sw);
-            const blob = await zip.generateAsync({ type: 'blob' });
-            triggerFileDownload(blob, `${slug}-pwa.zip`);
-            showToast('PWA Package (.ZIP) Downloaded!');
-        }
-
-        function triggerFileDownload(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function updateSavedBadge() {
-            document.getElementById('savedCountBadge').textContent = savedProjects.length;
-        }
-
-        function renderProjectsList() {
-            const container = document.getElementById('projectsListContainer');
-            if (!savedProjects.length) {
-                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">သိမ်းဆည်းထားသော App မရှိသေးပါ။</p>`;
-                return;
-            }
-            container.innerHTML = savedProjects.map(p => `
-                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
-                    <div class="min-w-0">
-                        <h4 class="font-bold text-sm truncate">${escapeHtml(p.title)}</h4>
-                        <p class="text-[11px] text-slate-500 truncate">${escapeHtml(p.prompt)}</p>
-                        <p class="text-[10px] text-slate-400 mt-0.5">${p.date}</p>
-                    </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button onclick="openSavedProject('${p.id}')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold">Open</button>
-                        <button onclick="deleteSavedProject('${p.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>`).join('');
-            lucide.createIcons();
-        }
-
-        function openSavedProject(id) {
-            const proj = savedProjects.find(x => x.id === id);
-            if (!proj) return;
-            applyBuiltApp(proj.html, proj.title, proj.prompt, false);
-            closeModal('projectsModal');
-            switchMainTab('preview');
-            showToast(`Loaded "${proj.title}"`);
-        }
-
-        function deleteSavedProject(id) {
-            savedProjects = savedProjects.filter(x => x.id !== id);
-            localStorage.setItem('multiagent_studio_projects', JSON.stringify(savedProjects));
-            updateSavedBadge();
-            renderProjectsList();
-        }
-
-        // =========================================================================
-        // 9. PARSING & DEFAULT TEMPLATES
-        // =========================================================================
-        function extractHtmlFromResponse(raw) {
-            const match = raw.match(/```html\s*([\s\S]*?)```/i) || raw.match(/```\s*(<!DOCTYPE html[\s\S]*?)```/i);
-            if (match && match[1]) return match[1].trim();
-            if (raw.includes('<!DOCTYPE html') || raw.includes('<html')) {
-                const start = raw.indexOf('<!DOCTYPE html') !== -1 ? raw.indexOf('<!DOCTYPE html') : raw.indexOf('<html');
-                return raw.slice(start).trim();
-            }
-            return '';
-        }
-
-        function extractTitleFromHtml(html) {
-            const m = html.match(/<title>(.*?)<\/title>/i);
-            return m ? m[1].trim() : '';
-        }
-
-        function slugify(s) {
-            return (s || 'app').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'ai-app';
-        }
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>"']/g, m => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[m]));
-        }
-
-        function loadStarterApp() {
-            const starter = getKoreaSpeakingTemplate();
-            applyBuiltApp(starter, 'Korea Speaking (Admin + User)', 'Starter Korea Speaking App', false);
-            document.getElementById('modeContextBadge').classList.add('hidden');
-        }
-
-        function getKoreaSpeakingTemplate() {
-            return `<!DOCTYPE html>
 <html lang="my">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Korea Speaking (Admin + User)</title>
-<script src="https://cdn.tailwindcss.com"><\/script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Myanmar:wght@400;600;700&display=swap" rel="stylesheet">
-<style>body{font-family:'Inter','Noto Sans Myanmar',sans-serif;}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini & DeepSeek Korean Tutor (Auto-Save)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: sans-serif; background: #121212; color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+    .header { background: #1e1e1e; padding: 12px; border-bottom: 1px solid #333; display: flex; flex-direction: column; gap: 8px; }
+    .keys { display: flex; gap: 8px; flex-wrap: wrap; }
+    input { background: #2c2c2c; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; flex: 1; min-width: 140px; font-size: 14px; }
+    .controls { display: flex; gap: 6px; flex-wrap: wrap; }
+    button { padding: 8px 11px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-start { background: #4caf50; color: white; }
+    .btn-pause { background: #ff9800; color: black; }
+    .btn-copy-all { background: #2196f3; color: white; }
+    .btn-save { background: #9c27b0; color: white; }
+    .btn-clear { background: #d32f2f; color: white; }
+    #chat-box { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { padding: 12px; border-radius: 10px; max-width: 88%; line-height: 1.6; position: relative; white-space: pre-wrap; font-size: 15px; }
+    .gemini { background: #1a237e; align-self: flex-start; border-left: 4px solid #448aff; }
+    .deepseek { background: #1b5e20; align-self: flex-end; border-right: 4px solid #69f0ae; }
+    .user { background: #333; align-self: center; border: 1px solid #555; font-size: 13px; }
+    .msg-header { font-size: 12px; opacity: 0.9; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .action-btns { display: flex; gap: 6px; }
+    .small-btn { background: rgba(255,255,255,0.18); color: #fff; padding: 4px 8px; font-size: 11px; border-radius: 4px; }
+    .small-btn:active { background: rgba(255,255,255,0.35); }
+    .footer { background: #1e1e1e; padding: 10px; display: flex; gap: 8px; border-top: 1px solid #333; }
+    .status-bar { font-size: 12px; color: #aaa; padding: 4px 12px; background: #181818; text-align: center; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900 pb-16">
-<header class="bg-gradient-to-r from-rose-600 to-indigo-600 text-white p-5 rounded-b-3xl shadow-lg">
-  <div class="flex items-center justify-between gap-2">
-    <div>
-      <h1 class="text-lg font-bold">🇰🇷 Korea Speaking Pro</h1>
-      <p class="text-[11px] opacity-90">ကိုရီးယား စကားပြော အသံထွက် & လေ့ကျင့်ခန်း</p>
-    </div>
-    <div class="flex bg-black/25 p-1 rounded-xl text-xs font-bold">
-      <button id="btnU" onclick="setRole('user')" class="px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm">User</button>
-      <button id="btnA" onclick="setRole('admin')" class="px-3 py-1 rounded-lg text-white">Admin</button>
-    </div>
-  </div>
-</header>
+<body>
 
-<div id="uView" class="p-4 space-y-3">
-  <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-    <div>
-      <p class="text-xs font-bold">🔊 အသံထွက် လေ့ကျင့်ရန်</p>
-      <p id="nowPlaying" class="text-[11px] text-slate-500">စာကြောင်းဘေးမှ 🔊 နှိပ်၍ နားထောင်ပါ</p>
-    </div>
-    <button onclick="randomSpeak()" class="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-600 text-xs font-bold">Random</button>
+<div class="header">
+  <div class="keys">
+    <input type="password" id="gemini-key" placeholder="Gemini API Key ထည့်ပါ" onchange="saveKeys()">
+    <input type="password" id="openrouter-key" placeholder="OpenRouter API Key ထည့်ပါ" onchange="saveKeys()">
   </div>
-  <div id="cards" class="space-y-2.5"></div>
+  <div class="controls">
+    <button class="btn-start" onclick="startConversation()">▶️ စတင် / ဆက်ပြော</button>
+    <button class="btn-pause" onclick="pauseConversation()">⏸️ ခဏရပ်</button>
+    <button class="btn-copy-all" onclick="copyAll()">📋 Copy</button>
+    <button class="btn-save" onclick="downloadChat()">💾 Save (.txt)</button>
+    <button class="btn-clear" onclick="clearChat()">🗑️ ရှင်းမည်</button>
+  </div>
 </div>
 
-<div id="aView" class="hidden p-4 space-y-3">
-  <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
-    <h2 class="text-xs font-bold text-slate-700">➕ စကားစုအသစ် ထည့်ရန် (Admin)</h2>
-    <input id="inKr" type="text" placeholder="ကိုရီးယားစာ (ဥပမာ - 감사합니다)" class="w-full px-3 py-2 rounded-xl bg-slate-50 border text-xs">
-    <input id="inRo" type="text" placeholder="အသံထွက် (ဥပမာ - Gam-sa-ham-ni-da)" class="w-full px-3 py-2 rounded-xl bg-slate-50 border text-xs">
-    <input id="inMm" type="text" placeholder="မြန်မာအဓိပ္ပာယ် (ဥပမာ - ကျေးဇူးတင်ပါတယ်)" class="w-full px-3 py-2 rounded-xl bg-slate-50 border text-xs">
-    <button onclick="addPhrase()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold">User App သို့ ထည့်မည်</button>
-  </div>
-  <div id="adminList" class="space-y-2"></div>
+<div class="status-bar" id="status-text">အသင့်ဖြစ်ပါပြီ</div>
+
+<div id="chat-box"></div>
+
+<div class="footer">
+  <input type="text" id="topic-input" placeholder="ဆွေးနွေးချင်တဲ့ ခေါင်းစဉ် (ဥပမာ- စားသောက်ဆိုင်မှာ မှာစားခြင်း)">
+  <button class="btn-start" onclick="sendUserTopic()">ပို့မည်</button>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem('kr_demo_v2') || 'null') || [
-  {id:1, kr:'안녕하세요', ro:'An-nyeong-ha-se-yo', mm:'မင်္ဂလာပါ'},
-  {id:2, kr:'만나서 반갑습니다', ro:'Man-na-seo ban-gap-seum-ni-da', mm:'တွေ့ရတာ ဝမ်းသာပါတယ်'},
-  {id:3, kr:'감사합니다', ro:'Gam-sa-ham-ni-da', mm:'ကျေးဇူးတင်ပါတယ်'},
-  {id:4, kr:'열심히 하겠습니다', ro:'Yeol-sim-hi ha-get-seum-ni-da', mm:'ကြိုးစားပါမယ်'}
-];
-function save(){ localStorage.setItem('kr_demo_v2', JSON.stringify(data)); }
-function speak(txt){
-  document.getElementById('nowPlaying').textContent = '🔊 ' + txt;
-  if('speechSynthesis' in window){
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(txt);
-    u.lang = 'ko-KR'; u.rate = 0.9;
-    window.speechSynthesis.speak(u);
+  let isRunning = false;
+  let turn = 'gemini';
+  let chatHistory = [];
+
+  // App စဖွင့်ချိန်တွင် API Keys နှင့် သိမ်းထားသော Chat များကို ပြန်ခေါ်ခြင်း
+  window.onload = () => {
+    document.getElementById('gemini-key').value = localStorage.getItem('g_key') || '';
+    document.getElementById('openrouter-key').value = localStorage.getItem('o_key') || '';
+
+    const savedChat = localStorage.getItem('korean_chat_history');
+    if (savedChat) {
+      try {
+        chatHistory = JSON.parse(savedChat);
+        chatHistory.forEach(m => renderMessage(m.role, m.name, m.text));
+        if (chatHistory.length > 0) {
+          // နောက်ဆုံးပြောခဲ့သူပေါ်မူတည်ပြီး အလှည့်ပြန်သတ်မှတ်မယ်
+          const lastRole = chatHistory[chatHistory.length - 1].role;
+          turn = (lastRole === 'gemini') ? 'deepseek' : 'gemini';
+          updateStatus(`💾 သိမ်းထားသော စကားပြော ${chatHistory.length} ကြောင်းကို ပြန်ဖော်ထားပါသည်`);
+        }
+      } catch (e) {
+        console.error("Failed to load chat history", e);
+      }
+    }
+  };
+
+  function saveKeys() {
+    localStorage.setItem('g_key', document.getElementById('gemini-key').value.trim());
+    localStorage.setItem('o_key', document.getElementById('openrouter-key').value.trim());
   }
-}
-function randomSpeak(){ if(data.length) speak(data[Math.floor(Math.random()*data.length)].kr); }
-function render(){
-  document.getElementById('cards').innerHTML = data.map(d => \`
-    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
-      <div>
-        <h3 class="text-base font-bold">\${d.kr}</h3>
-        <p class="text-xs font-semibold text-rose-600">[\${d.ro}]</p>
-        <p class="text-xs text-slate-600 mt-0.5">\${d.mm}</p>
-      </div>
-      <button onclick="speak('\${d.kr}')" class="w-11 h-11 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-md active:scale-95 text-lg shrink-0">🔊</button>
-    </div>\`).join('');
-  document.getElementById('adminList').innerHTML = data.map(d => \`
-    <div class="bg-white p-3 rounded-xl border flex justify-between items-center text-xs">
-      <div><strong>\${d.kr}</strong> — \${d.mm}</div>
-      <button onclick="del(\${d.id})" class="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-600 font-bold">ဖျက်မည်</button>
-    </div>\`).join('');
-}
-function addPhrase(){
-  const kr = document.getElementById('inKr').value.trim();
-  const ro = document.getElementById('inRo').value.trim();
-  const mm = document.getElementById('inMm').value.trim();
-  if(!kr || !mm) return;
-  data.unshift({id:Date.now(), kr, ro:ro||'-', mm});
-  save(); render();
-  document.getElementById('inKr').value=''; document.getElementById('inRo').value=''; document.getElementById('inMm').value='';
-}
-function del(id){ data = data.filter(x=>x.id!==id); save(); render(); }
-function setRole(r){
-  document.getElementById('uView').classList.toggle('hidden', r!=='user');
-  document.getElementById('aView').classList.toggle('hidden', r!=='admin');
-  document.getElementById('btnU').className = r==='user' ? 'px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm' : 'px-3 py-1 rounded-lg text-white';
-  document.getElementById('btnA').className = r==='admin' ? 'px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm' : 'px-3 py-1 rounded-lg text-white';
-}
-render();
-<\/script>
-</body></html>`;
-        }
 
-        function getPosShopTemplate() {
-            return `<!DOCTYPE html>
-<html lang="my">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Shop & POS</title>
-<script src="https://cdn.tailwindcss.com"><\/script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+Myanmar:wght@400;600;700&display=swap" rel="stylesheet">
-<style>body{font-family:'Inter','Noto Sans Myanmar',sans-serif;}</style>
-</head>
-<body class="bg-slate-50 text-slate-900 p-4 pb-24">
-<header class="bg-amber-600 text-white p-5 rounded-3xl shadow-md mb-4">
-  <h1 class="text-lg font-bold">🛍️ Smart POS & Menu</h1>
-  <p class="text-xs opacity-90">ပစ္စည်းများ ရွေးချယ်ပြီး စျေးခြင်းတောင်း တွက်ချက်ပါ</p>
-</header>
-<div id="grid" class="grid grid-cols-2 gap-3"></div>
-<div id="bar" class="hidden fixed bottom-3 left-3 right-3 bg-slate-900 text-white p-3.5 rounded-2xl flex justify-between items-center shadow-xl">
-  <div><p class="text-[11px] text-slate-400"><span id="cnt">0</span> ခု</p><p class="text-sm font-bold"><span id="tot">0</span> Ks</p></div>
-  <button onclick="cart=[];renderBar()" class="px-4 py-2 rounded-xl bg-emerald-600 text-xs font-bold">ငွေရှင်းမည်</button>
-</div>
-<script>
-const prods = [{name:'Iced Coffee',price:3500,ic:'☕'},{name:'Milk Tea',price:3000,ic:'🧋'},{name:'Burger',price:5500,ic:'🍔'},{name:'Cake',price:4000,ic:'🍰'}];
-let cart = [];
-document.getElementById('grid').innerHTML = prods.map((p,i)=>\`
-  <div class="bg-white p-3.5 rounded-2xl border shadow-sm">
-    <div class="text-3xl mb-1">\${p.ic}</div>
-    <h3 class="font-bold text-sm">\${p.name}</h3>
-    <p class="text-xs text-slate-500 mb-2">\${p.price.toLocaleString()} Ks</p>
-    <button onclick="cart.push(prods[\${i}]);renderBar()" class="w-full py-1.5 rounded-xl bg-amber-500/15 text-amber-700 text-xs font-bold">+ ထည့်မည်</button>
-  </div>\`).join('');
-function renderBar(){
-  document.getElementById('bar').classList.toggle('hidden', !cart.length);
-  document.getElementById('cnt').textContent = cart.length;
-  document.getElementById('tot').textContent = cart.reduce((a,b)=>a+b.price,0).toLocaleString();
-}
-<\/script>
-</body></html>`;
-        }
-    </script>
+  function saveChatToStorage() {
+    localStorage.setItem('korean_chat_history', JSON.stringify(chatHistory));
+  }
+
+  const systemPrompt = `You are having a friendly conversation with another AI to teach Korean speaking to a Burmese learner. 
+  Rules:
+  1. Speak naturally in Korean (2-3 sentences max per turn).
+  2. Immediately below the Korean text, provide the accurate Burmese (Myanmar) translation inside parentheses ( ).
+  3. Keep the conversation engaging, practical, and focused on daily Korean speaking.`;
+
+  function speakKorean(fullText, btnElement) {
+    window.speechSynthesis.cancel();
+    const koreanOnly = fullText.replace(/\([^)]*\)/g, '').trim();
+    if (!koreanOnly) return;
+
+    const utterance = new SpeechSynthesisUtterance(koreanOnly);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.9;
+
+    btnElement.innerText = '🔊 ဖတ်နေသည်...';
+    utterance.onend = () => { btnElement.innerText = '🔊 နားထောင်'; };
+    utterance.onerror = () => { btnElement.innerText = '🔊 နားထောင်'; };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // UI ပေါ်တွင် စာသားပြသပေးမည့် Function
+  function renderMessage(sender, name, text) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = `msg ${sender}`;
+    
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+    header.innerHTML = `<span><b>${name}</b></span>`;
+    
+    if (sender !== 'user') {
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'action-btns';
+
+      const ttsBtn = document.createElement('button');
+      ttsBtn.className = 'small-btn';
+      ttsBtn.innerText = '🔊 နားထောင်';
+      ttsBtn.onclick = () => speakKorean(text, ttsBtn);
+      btnGroup.appendChild(ttsBtn);
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'small-btn';
+      copyBtn.innerText = '📋 Copy';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(text);
+        copyBtn.innerText = '✅ Copied';
+        setTimeout(() => copyBtn.innerText = '📋 Copy', 1500);
+      };
+      btnGroup.appendChild(copyBtn);
+
+      header.appendChild(btnGroup);
+    }
+
+    const content = document.createElement('div');
+    content.innerText = text;
+
+    div.appendChild(header);
+    div.appendChild(content);
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // စာသားအသစ်ထည့်ပြီး Auto-Save လုပ်မည့် Function
+  function addMessage(sender, name, text) {
+    renderMessage(sender, name, text);
+    chatHistory.push({ role: sender, name: name, text: text });
+    saveChatToStorage();
+  }
+
+  function updateStatus(msg) {
+    document.getElementById('status-text').innerText = msg;
+  }
+
+  function sendUserTopic() {
+    const input = document.getElementById('topic-input');
+    const topic = input.value.trim();
+    if (!topic) return;
+    addMessage('user', 'You (ခေါင်းစဉ်)', topic);
+    input.value = '';
+    if (!isRunning) startConversation();
+  }
+
+  function pauseConversation() {
+    isRunning = false;
+    window.speechSynthesis.cancel();
+    updateStatus("⏸️ စကားပြောခြင်းကို ခဏရပ်ထားပါသည်။ (Chat များကို သိမ်းဆည်းပြီးပါပြီ)");
+  }
+
+  function clearChat() {
+    if (!confirm("သိမ်းထားတဲ့ Chat တွေအားလုံးကို ဖျက်ပစ်မှာ သေချာပါသလား?")) return;
+    pauseConversation();
+    chatHistory = [];
+    localStorage.removeItem('korean_chat_history');
+    document.getElementById('chat-box').innerHTML = '';
+    updateStatus("🗑️ Chat အားလုံးကို ရှင်းလင်းပြီးပါပြီ။");
+  }
+
+  function copyAll() {
+    if (chatHistory.length === 0) return;
+    const allText = chatHistory.map(m => `[${m.name}]\n${m.text}`).join('\n\n---\n\n');
+    navigator.clipboard.writeText(allText);
+    updateStatus("📋 Chat တစ်ခုလုံးကို Copy ကူးပြီးပါပြီ!");
+  }
+
+  // Chat များကို .txt ဖိုင်အဖြစ် ဒေါင်းလုဒ်ဆွဲသိမ်းဆည်းခြင်း
+  function downloadChat() {
+    if (chatHistory.length === 0) {
+      alert("သိမ်းစရာ စကားပြောမှတ်တမ်း မရှိသေးပါ။");
+      return;
+    }
+    const allText = chatHistory.map(m => `[${m.name}]\n${m.text}`).join('\n\n----------------------------------------\n\n');
+    const blob = new Blob([allText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `Korean-Speaking-${dateStr}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    updateStatus("💾 Chat ဖိုင်ကို ဒေါင်းလုဒ်ဆွဲ သိမ်းဆည်းပြီးပါပြီ!");
+  }
+
+  async function startConversation() {
+    const gKey = document.getElementById('gemini-key').value.trim();
+    const oKey = document.getElementById('openrouter-key').value.trim();
+    if (!gKey || !oKey) {
+      alert("Gemini API Key နဲ့ OpenRouter API Key နှစ်ခုလုံး ထည့်ပေးပါ။");
+      return;
+    }
+    saveKeys();
+    if (isRunning) return;
+    isRunning = true;
+
+    if (chatHistory.length === 0) {
+      addMessage('user', 'System', 'ကိုရီးယား နေ့စဉ်သုံး စကားပြော (Daily Korean Speaking) အကြောင်း စတင်ဆွေးနွေးပါ။');
+    }
+
+    while (isRunning) {
+      const recentContext = chatHistory.slice(-6).map(m => `${m.name}: ${m.text}`).join('\n');
+      
+      if (turn === 'gemini') {
+        updateStatus("💬 Gemini စာရိုက်နေပါသည်...");
+        const reply = await callGemini(gKey, recentContext);
+        if (!isRunning) break;
+        if (reply) addMessage('gemini', 'Gemini', reply);
+        turn = 'deepseek';
+      } else {
+        updateStatus("💬 DeepSeek စာရိုက်နေပါသည်...");
+        const reply = await callOpenRouter(oKey, recentContext);
+        if (!isRunning) break;
+        if (reply) addMessage('deepseek', 'DeepSeek (OpenRouter)', reply);
+        turn = 'gemini';
+      }
+
+      if (!isRunning) break;
+      updateStatus("⏳ စာဖတ်ချိန် ၄ စက္ကန့် စောင့်ဆိုင်းနေပါသည်...");
+      await new Promise(r => setTimeout(r, 4000));
+    }
+  }
+
+  async function callGemini(apiKey, context) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\nConversation so far:\n${context}\n\nYour turn (Gemini):` }] }]
+        })
+      });
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error from Gemini";
+    } catch (e) {
+      isRunning = false;
+      updateStatus("❌ Gemini ချိတ်ဆက်မှု အဆင်မပြေပါ");
+      return "Gemini Error: " + e.message;
+    }
+  }
+
+  async function callOpenRouter(apiKey, context) {
+    try {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-chat",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Conversation so far:\n${context}\n\nYour turn (DeepSeek):` }
+          ]
+        })
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "Error from OpenRouter";
+    } catch (e) {
+      isRunning = false;
+      updateStatus("❌ OpenRouter ချိတ်ဆက်မှု အဆင်မပြေပါ");
+      return "OpenRouter Error: " + e.message;
+    }
+  }
+</script>
 </body>
 </html>
