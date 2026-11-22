@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Korean AI Trio</title>
 
-  <!-- Inline PWA Manifest -->
   <link rel="manifest" id="pwa-manifest">
 
   <style>
@@ -108,9 +107,6 @@
       background: rgba(59, 130, 246, 0.15);
       border-color: rgba(59, 130, 246, 0.4);
       color: #60a5fa;
-    }
-    .ctrl-next:active {
-      background: rgba(59, 130, 246, 0.3);
     }
 
     .status-line {
@@ -427,7 +423,6 @@
 
 <!-- Top Header -->
 <div class="topbar">
-  <!-- Left Menu Button -->
   <button class="circle-btn" onclick="toggleDrawer(true)" title="Menu">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
       <line x1="4" y1="9" x2="20" y2="9"></line>
@@ -435,14 +430,12 @@
     </svg>
   </button>
 
-  <!-- Center Boxed Buttons: Play | Pause | Next -->
   <div class="control-boxes">
     <button class="ctrl-box ctrl-play" id="btn-play" onclick="startConversation()">Play</button>
     <button class="ctrl-box ctrl-pause active" id="btn-pause" onclick="pauseConversation()">Pause</button>
     <button class="ctrl-box ctrl-next" id="btn-next" onclick="skipAndPlay()">Next</button>
   </div>
 
-  <!-- Right New Chat Icon -->
   <button class="circle-btn" onclick="createNewChat(true)" title="New Chat">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
@@ -523,14 +516,15 @@
     </div>
 
     <div class="field">
-      <label>1. Gemini API Key (Google AI Studio)</label>
+      <label>1. Gemini API Key (Auto-Fallback ပါဝင်သည်)</label>
       <input type="password" id="set-g-key" placeholder="AIzaSy...">
     </div>
     <div class="field">
-      <label>Gemini Model</label>
+      <label>Gemini Primary Model</label>
       <select id="set-g-model">
         <option value="gemini-2.0-flash">gemini-2.0-flash</option>
         <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+        <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
         <option value="gemini-1.5-flash">gemini-1.5-flash</option>
       </select>
     </div>
@@ -545,15 +539,15 @@
     </div>
 
     <div class="field">
-      <label>3. Groq API Key (console.groq.com)</label>
+      <label>3. Groq API Key (Auto-Fallback ပါဝင်သည်)</label>
       <input type="password" id="set-q-key" placeholder="gsk_...">
     </div>
     <div class="field">
-      <label>Groq Model</label>
+      <label>Groq Primary Model</label>
       <select id="set-q-model">
-        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (အထက်မြက်ဆုံး)</option>
-        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (အမြန်ဆုံး)</option>
-        <option value="qwen/qwen3-32b">qwen/qwen3-32b</option>
+        <option value="openai/gpt-oss-120b">openai/gpt-oss-120b (သင့် Project တွင် ပါဝင်သည်)</option>
+        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant</option>
       </select>
     </div>
 
@@ -573,7 +567,7 @@
 </div>
 
 <script>
-  // --- PWA Setup (Dynamic Manifest & Service Worker) ---
+  // --- PWA Setup ---
   (function setupPWA() {
     const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#131c31"/><text x="50%" y="54%" font-size="240" text-anchor="middle" dominant-baseline="middle">🇰🇷</text></svg>`;
     const iconUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvg)));
@@ -610,20 +604,18 @@
 
   async function installPWA() {
     if (!deferredPrompt) {
-      alert('Browser ညာဘက်အပေါ် Menu (⋮) မှ "Add to Home screen" သို့မဟုတ် "Install app" ကို နှိပ်ပြီး ထည့်သွင်းနိုင်ပါသည်။');
+      alert('Browser Menu (⋮) မှ "Add to Home screen" သို့မဟုတ် "Install app" ကို နှိပ်ပါ။');
       return;
     }
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      document.getElementById('pwa-install-btn').style.display = 'none';
-    }
+    if (outcome === 'accepted') document.getElementById('pwa-install-btn').style.display = 'none';
     deferredPrompt = null;
   }
 
   // --- App State ---
   let isRunning = false;
-  let loopToken = 0; // Loop ထပ်မနေစေရန် ထိန်းချုပ်မည့် Token
+  let loopToken = 0;
   let turnIndex = 0;
   let sessions = JSON.parse(localStorage.getItem('kr_trio_sessions') || '[]');
   let currentSessionId = null;
@@ -637,7 +629,7 @@
     oKey: localStorage.getItem('o_key') || '',
     oModel: 'deepseek/deepseek-chat',
     qKey: '',
-    qModel: 'llama-3.3-70b-versatile',
+    qModel: 'openai/gpt-oss-120b',
     delay: 4,
     tts: 0.9,
     theme: 'dark'
@@ -879,7 +871,6 @@
     window.speechSynthesis.speak(utt);
   }
 
-  // --- Play / Pause / Next Controls (Fixed) ---
   function updateControlUI(playing) {
     document.getElementById('btn-play').classList.toggle('active', playing);
     document.getElementById('btn-pause').classList.toggle('active', !playing);
@@ -887,7 +878,7 @@
 
   function pauseConversation() {
     isRunning = false;
-    loopToken++; // လက်ရှိ Loop ကို ချက်ချင်းရပ်စေရန်
+    loopToken++;
     window.speechSynthesis.cancel();
     updateControlUI(false);
     updateStatus('⏸️ Pause လုပ်ထားပါသည်');
@@ -899,7 +890,6 @@
       openSettings();
       return;
     }
-    // လက်ရှိ Loop ကို ရပ်ပြီး နောက်တစ်ယောက်အလှည့်နဲ့ ချက်ချင်း ပြန်စမယ်
     isRunning = false;
     loopToken++;
     turnIndex = (turnIndex + 1) % agents.length;
@@ -934,22 +924,19 @@
       const context = recentMsgs.map(m => `${m.name}: ${m.text}`).join('\n');
       const lastImgMsg = [...recentMsgs].reverse().find(m => m.role === 'user' && m.rawBase64);
 
-      let reply = null;
+      let result = null;
       if (currentAgent === 'gemini') {
-        updateStatus('💬 Gemini စာရိုက်နေသည်...');
-        reply = await callGemini(context, lastImgMsg);
+        result = await callGeminiWithFallback(context, lastImgMsg);
       } else if (currentAgent === 'deepseek') {
         updateStatus('💬 DeepSeek စာရိုက်နေသည်...');
-        reply = await callOpenRouter(context);
+        result = await callOpenRouter(context);
       } else if (currentAgent === 'groq') {
-        updateStatus('⚡ Groq စာရိုက်နေသည်...');
-        reply = await callGroq(context);
+        result = await callGroqWithFallback(context);
       }
 
       if (!isRunning || myToken !== loopToken) break;
-      if (reply) {
-        const label = currentAgent === 'gemini' ? 'Gemini' : (currentAgent === 'deepseek' ? 'DeepSeek' : 'Groq');
-        addMessage(currentAgent, label, reply);
+      if (result) {
+        addMessage(currentAgent, result.label, result.text);
       }
 
       turnIndex = (turnIndex + 1) % activeList.length;
@@ -969,25 +956,50 @@ STRICT FORMAT:
 - Do not use markdown bolding or extra labels.`;
   }
 
-  async function callGemini(context, imgMsg) {
-    const parts = [{ text: `${buildPrompt('Gemini')}\n\nConversation:\n${context}\n\nGemini:` }];
-    if (imgMsg && imgMsg.rawBase64) {
-      parts.push({ inline_data: { mime_type: imgMsg.mimeType, data: imgMsg.rawBase64 } });
+  // --- Gemini Auto-Fallback System ---
+  async function callGeminiWithFallback(context, imgMsg) {
+    const allModels = [
+      config.gModel,
+      'gemini-2.0-flash',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-1.5-flash'
+    ];
+    // Duplicate တွေ ဖယ်မယ်
+    const uniqueModels = [...new Set(allModels)];
+    let lastError = 'Unknown Error';
+
+    for (const model of uniqueModels) {
+      updateStatus(`💬 Gemini (${model}) စာရိုက်နေသည်...`);
+      const parts = [{ text: `${buildPrompt('Gemini')}\n\nConversation:\n${context}\n\nGemini:` }];
+      if (imgMsg && imgMsg.rawBase64) {
+        parts.push({ inline_data: { mime_type: imgMsg.mimeType, data: imgMsg.rawBase64 } });
+      }
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.gKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+        const data = await res.json();
+        if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return {
+            label: `Gemini (${model.replace('gemini-', '')})`,
+            text: data.candidates[0].content.parts[0].text
+          };
+        }
+        lastError = `[${model}] ${data.error?.message || 'Failed'}`;
+      } catch (e) {
+        lastError = `[${model}] ${e.message}`;
+      }
     }
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.gModel}:generateContent?key=${config.gKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts }] })
-      });
-      const data = await res.json();
-      if (data.candidates?.[0]?.content?.parts?.[0]?.text) return data.candidates[0].content.parts[0].text;
-      pauseConversation();
-      return `Gemini Error: ${data.error?.message || 'Failed'}`;
-    } catch (e) {
-      pauseConversation();
-      return `Gemini Error: ${e.message}`;
-    }
+
+    // အကုန်လုံး မရမှသာ Error ပြပြီး နောက်တစ်ယောက်ဆီ ဆက်ကူးမယ်
+    return {
+      label: 'Gemini (Error)',
+      text: `⚠️ Gemini Models အားလုံး မရပါ:\n(${lastError})`
+    };
   }
 
   async function callOpenRouter(context) {
@@ -1004,36 +1016,58 @@ STRICT FORMAT:
         })
       });
       const data = await res.json();
-      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
-      pauseConversation();
-      return `DeepSeek Error: ${data.error?.message || 'Failed'}`;
+      if (data.choices?.[0]?.message?.content) {
+        return { label: 'DeepSeek', text: data.choices[0].message.content };
+      }
+      return { label: 'DeepSeek (Error)', text: `⚠️ ${data.error?.message || 'OpenRouter Error'}` };
     } catch (e) {
-      pauseConversation();
-      return `DeepSeek Error: ${e.message}`;
+      return { label: 'DeepSeek (Error)', text: `⚠️ ${e.message}` };
     }
   }
 
-  async function callGroq(context) {
-    try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${config.qKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: config.qModel,
-          messages: [
-            { role: "system", content: buildPrompt('Groq') },
-            { role: "user", content: `Conversation:\n${context}\n\nGroq:` }
-          ]
-        })
-      });
-      const data = await res.json();
-      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
-      pauseConversation();
-      return `Groq Error: ${data.error?.message || 'Failed'}`;
-    } catch (e) {
-      pauseConversation();
-      return `Groq Error: ${e.message}`;
+  // --- Groq Auto-Fallback System ---
+  async function callGroqWithFallback(context) {
+    const allModels = [
+      config.qModel,
+      'openai/gpt-oss-120b',
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'allam-2-7b'
+    ];
+    const uniqueModels = [...new Set(allModels)];
+    let lastError = 'Unknown Error';
+
+    for (const model of uniqueModels) {
+      updateStatus(`⚡ Groq (${model}) စာရိုက်နေသည်...`);
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${config.qKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              { role: "system", content: buildPrompt('Groq') },
+              { role: "user", content: `Conversation:\n${context}\n\nGroq:` }
+            ]
+          })
+        });
+        const data = await res.json();
+        if (data.choices?.[0]?.message?.content) {
+          return {
+            label: `Groq (${model.split('/').pop()})`,
+            text: data.choices[0].message.content
+          };
+        }
+        lastError = `[${model}] ${data.error?.message || 'HTTP ' + res.status}`;
+      } catch (e) {
+        lastError = `[${model}] ${e.message}`;
+      }
     }
+
+    return {
+      label: 'Groq (Error)',
+      text: `⚠️ Groq Models အားလုံး မရပါ:\n(${lastError})`
+    };
   }
 
   function toggleDrawer(open) {
